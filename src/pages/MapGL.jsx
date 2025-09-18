@@ -3,6 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { listTheaters } from "../api/theaters";
 
+// escolha um estilo (sem chave) — raster dark bonito:
 const STYLE_RASTER_DARK = {
   version: 8,
   sources: {
@@ -14,53 +15,45 @@ const STYLE_RASTER_DARK = {
         "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
       ],
       tileSize: 256,
-      attribution:
-        '© OpenStreetMap contributors · Tiles © Carto',
+      attribution: '© OpenStreetMap contributors · Tiles © Carto',
     },
   },
-  layers: [
-    { id: "cartoDark", type: "raster", source: "cartoDark" }
-  ],
+  layers: [{ id: "cartoDark", type: "raster", source: "cartoDark" }],
 };
 
+// se preferir MapTiler dark vetorial (requer chave):
+// const STYLE_DARK = `https://api.maptiler.com/maps/dark/style.json?key=${import.meta.env.VITE_MAPTILER_KEY}`;
+
 export default function MapGLPage() {
-  const containerRef = useRef(null);
+  const wrapRef = useRef(null);
   const mapRef = useRef(null);
   const [theaters, setTheaters] = useState([]);
 
-  useEffect(() => {
-    listTheaters().then(setTheaters).catch(console.error);
-  }, []);
+  useEffect(() => { listTheaters().then(setTheaters).catch(console.error); }, []);
 
   const points = useMemo(
-    () =>
-      (theaters || [])
-        .map((t) => {
-          const [lng, lat] = t.location?.coordinates || [];
-          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-          return {
-            id: t._id || t.id,
-            name: t.name,
-            lat,
-            lng,
-            city: t.address?.city,
-            state: t.address?.state,
-          };
-        })
-        .filter(Boolean),
+    () => (theaters || [])
+      .map((t) => {
+        const [lng, lat] = t.location?.coordinates || [];
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return {
+          id: t._id || t.id, name: t.name, lat, lng,
+          city: t.address?.city, state: t.address?.state,
+        };
+      })
+      .filter(Boolean),
     [theaters]
   );
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-
+    if (!wrapRef.current || mapRef.current) return;
     const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: STYLE_RASTER_DARK,          // <<<<<<<<<<<<<< AQUI
+      container: wrapRef.current,
+      style: STYLE_RASTER_DARK,
       center: [-51.92528, -14.235004],
       zoom: 4,
       attributionControl: true,
-      cooperativeGestures: true,
+      cooperativeGestures: false,
     });
     mapRef.current = map;
 
@@ -68,17 +61,14 @@ export default function MapGLPage() {
 
     map.on("load", () => {
       points.forEach((p) => addMarker(map, p));
-      if (points.length > 0) {
+      if (points.length) {
         const bounds = new maplibregl.LngLatBounds();
         points.forEach((p) => bounds.extend([p.lng, p.lat]));
         map.fitBounds(bounds, { padding: 60, duration: 800 });
       }
     });
 
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
+    return () => { map.remove(); mapRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -90,12 +80,9 @@ export default function MapGLPage() {
   }, [points]);
 
   return (
-    <div className="card map-page">
-      <h2>Mapa (Vector engine + Raster Dark)</h2>
-      <div
-        ref={containerRef}
-        style={{ width: "100%", height: "75vh", borderRadius: 12, overflow: "hidden" }}
-      />
+    // mapa full: essa div ocupa todo o viewport abaixo da navbar
+    <div className="map-full">
+      <div ref={wrapRef} className="map-canvas" />
     </div>
   );
 }

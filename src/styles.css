@@ -168,3 +168,79 @@ img{ border: 1px solid var(--border); border-radius: 10px; }
 /* título/link dentro do popup (se houver) */
 .maplibregl-popup-content a { color: #4aa8ff; }
 .maplibregl-popup-content strong { color: #e8eef3; }
+
+/* ===== VAR ALTURA DA NAV ===== */
+:root { --nav-h: 60px; }
+
+/* corpo ocupa 100% e reserva o espaço da navbar fixa */
+html, body, #root { height: 100%; }
+body { padding-top: var(--nav-h); }
+
+/* navbar fixa no topo, full width */
+.topbar{
+  position: fixed; top: 0; left: 0; right: 0; height: var(--nav-h);
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  z-index: 1000;
+}
+.topbar-inner{
+  height: 100%;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 0 16px;
+}
+.topbar h1 { font-size: 18px; margin: 0; color: var(--text); }
+.topbar nav { display: flex; gap: 12px; flex-wrap: wrap; }
+.topbar nav a{
+  color: var(--muted); text-decoration: none; padding: 8px 10px; border-radius: 10px;
+  border: 1px solid transparent;
+}
+.topbar nav a:hover{ color: var(--text); background: #0f1419; border-color: var(--border); }
+.topbar nav a.active{ color: var(--text); background: var(--panel); border:1px solid var(--border); }
+
+/* área de conteúdo padrão (formularios etc) */
+.page{
+  min-height: calc(100vh - var(--nav-h));
+  padding: 24px;
+  max-width: 1024px;
+  margin: 0 auto;
+}
+
+/* ====== MAPA EM TELA CHEIA ====== */
+/* A página do mapa não precisa de padding/margem; o mapa ocupa todo o espaço abaixo da navbar */
+.page:has(.map-full){  /* só quando a página contém o full map */
+  padding: 0;
+  max-width: 100vw;
+}
+
+/* wrapper do mapa em tela cheia */
+.map-full{
+  width: 100vw;
+  height: calc(100vh - var(--nav-h));
+}
+
+/* o container/canvas do mapa ocupa 100% do wrapper */
+.map-full .map-canvas{
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0; /* sem cantos arredondados no fullscreen */
+}
+
+/* controles do MapLibre no dark (opcional) */
+.maplibregl-ctrl, .maplibregl-ctrl-group {
+  background: rgba(15,20,25,.7);
+  border: 1px solid #25303a;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.35);
+}
+.maplibregl-ctrl button { filter: invert(90%) hue-rotate(180deg); }
+
+/* popups dark (como já fizemos) */
+.maplibregl-popup-content {
+  background: #0f1419; color: #e8eef3;
+  border: 1px solid #25303a; border-radius: 10px;
+}
+.maplibregl-popup-anchor-top    .maplibregl-popup-tip { border-bottom-color: #0f1419; }
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color:    #0f1419; }
+.maplibregl-popup-anchor-left   .maplibregl-popup-tip { border-right-color:  #0f1419; }
+.maplibregl-popup-anchor-right  .maplibregl-popup-tip { border-left-color:   #0f1419; }
