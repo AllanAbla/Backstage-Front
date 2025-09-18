@@ -1,0 +1,31 @@
+# Env
+.env
+.env.*.local
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+# (se você quiser versionar o lockfile, remova essa linha ^)
+
+# Build outputs
+dist/
+dist-ssr/
+*.local
+
+# Vite/Tooling caches (normalmente dentro de node_modules, mas por garantia)
+.vite/
+.cache/
+
+# Coverage
+coverage/
+*.lcov
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
