@@ -2,7 +2,7 @@ import { Routes, Route, NavLink } from "react-router-dom";
 import TheaterForm from "./components/TheaterForm.jsx";
 import PerformanceForm from "./components/PerformanceForm.jsx";
 import MapPage from "./pages/Map.jsx";
-import MapGLPage from "./pages/MapGL.jsx";
+import MapGLPage from "./pages/MapGl.jsx";
 
 export default function App() {
   return (

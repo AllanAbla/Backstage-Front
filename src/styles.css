@@ -144,3 +144,27 @@ img{ border: 1px solid var(--border); border-radius: 10px; }
   backface-visibility: hidden;
   transform: translateZ(0);
 }
+
+/* MapLibre GL popups — dark mode */
+.maplibregl-popup {
+  z-index: 400; /* acima dos markers */
+}
+
+.maplibregl-popup-content {
+  background: #0f1419;      /* fundo escuro */
+  color: #e8eef3;           /* texto claro */
+  border: 1px solid #25303a;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45);
+  padding: 10px 12px;
+}
+
+/* cor da “seta” do balão para todos os lados */
+.maplibregl-popup-anchor-top    .maplibregl-popup-tip { border-bottom-color: #0f1419; }
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color:    #0f1419; }
+.maplibregl-popup-anchor-left   .maplibregl-popup-tip { border-right-color:  #0f1419; }
+.maplibregl-popup-anchor-right  .maplibregl-popup-tip { border-left-color:   #0f1419; }
+
+/* título/link dentro do popup (se houver) */
+.maplibregl-popup-content a { color: #4aa8ff; }
+.maplibregl-popup-content strong { color: #e8eef3; }
