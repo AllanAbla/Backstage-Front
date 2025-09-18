@@ -74,10 +74,12 @@ export default function MapPage() {
         zoom={initialZoom}
         scrollWheelZoom
         worldCopyJump
+        updateWhenIdle
+        preferCanvas={true} // ajuda em algumas GPUs
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> · Tiles: &copy; Carto'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution="&copy; Esri, HERE, Garmin, FAO, NOAA, USGS | © OpenStreetMap contributors"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
         />
         {/* ajusta o mapa para caber todos os pontos quando carregar */}
         <FitBounds points={points} />

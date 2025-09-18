@@ -1,7 +1,8 @@
 import { Routes, Route, NavLink } from "react-router-dom";
 import TheaterForm from "./components/TheaterForm.jsx";
 import PerformanceForm from "./components/PerformanceForm.jsx";
-import MapPage from "./pages/Map.jsx"; // <-- ADICIONE ESSA LINHA
+import MapPage from "./pages/Map.jsx";
+import MapGLPage from "./pages/MapGL.jsx";
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
           <NavLink to="/theaters/new">Novo Teatro</NavLink>
           <NavLink to="/performances/new">Nova Performance</NavLink>
           <NavLink to="/map">Mapa</NavLink>
+          <NavLink to="/map-gl">Mapa (Vector)</NavLink>
         </nav>
       </header>
 
@@ -19,7 +21,8 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/theaters/new" element={<TheaterForm />} />
         <Route path="/performances/new" element={<PerformanceForm />} />
-        <Route path="/map" element={<MapPage />} /> {/* <-- usa o componente importado */}
+        <Route path="/map" element={<MapPage />} />
+        <Route path="/map-gl" element={<MapGLPage />} /> 
       </Routes>
     </div>
   );

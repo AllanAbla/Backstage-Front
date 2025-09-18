@@ -137,3 +137,10 @@ img{ border: 1px solid var(--border); border-radius: 10px; }
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
 }
+.leaflet-pane,
+.leaflet-map-pane,
+.leaflet-tile-pane,
+.leaflet-objects-pane {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
