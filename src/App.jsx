@@ -1,7 +1,7 @@
 import { NavLink, Routes, Route } from "react-router-dom";
 import TheaterForm from "./components/TheaterForm.jsx";
 import PerformanceForm from "./components/PerformanceForm.jsx";
-import MapGLPage from "./pages/MapGl.jsx"; // ou Map.jsx se estiver usando Leaflet
+import MapGLPage from "./pages/MapGl.jsx";
 
 export default function App() {
   return (
