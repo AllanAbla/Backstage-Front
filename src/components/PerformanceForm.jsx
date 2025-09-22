@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createPerformance } from "../api/performances";
-import SessionsEditor, { toUtcISOString } from "./SessionsEditor";
+import { listTheaters } from "../api/theaters";
 import CrewEditor from "./CrewEditor";
+import SessionsEditor, { toUtcISOString } from "./SessionsEditor";
 
+// ---------- Helpers ----------
 function csvToList(s) {
   return s
     .split(",")
@@ -14,12 +16,80 @@ function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     if (!file) return resolve(null);
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result); // data URL
+    reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
 }
 
+// ---------- TheatersEditor ----------
+function TheatersEditor({ value, onChange, theatersOptions }) {
+  const addTheater = () => {
+    onChange([...value, { theater_id: "", sessions: [] }]);
+  };
+
+  const updateTheater = (index, field, v) => {
+    const updated = [...value];
+    updated[index][field] = v;
+    onChange(updated);
+  };
+
+  const updateSessions = (index, sessions) => {
+    const updated = [...value];
+    updated[index].sessions = sessions;
+    onChange(updated);
+  };
+
+  const removeTheater = (index) => {
+    const updated = [...value];
+    updated.splice(index, 1);
+    onChange(updated);
+  };
+
+  return (
+    <fieldset>
+      <legend>Teatros</legend>
+      <button type="button" onClick={addTheater}>
+        ➕ Adicionar Teatro
+      </button>
+
+      {value.map((theater, i) => (
+        <div
+          key={i}
+          className="theater-block"
+          style={{ border: "1px solid #ccc", padding: 10, marginTop: 10 }}
+        >
+          <label>
+            Teatro*
+            <select
+              required
+              value={theater.theater_id}
+              onChange={(e) => updateTheater(i, "theater_id", e.target.value)}
+            >
+              <option value="">Selecione...</option>
+              {theatersOptions.map((t) => (
+                <option key={t._id} value={t._id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <SessionsEditor
+            value={theater.sessions}
+            onChange={(sessions) => updateSessions(i, sessions)}
+          />
+
+          <button type="button" onClick={() => removeTheater(i)}>
+            ❌ Remover Teatro
+          </button>
+        </div>
+      ))}
+    </fieldset>
+  );
+}
+
+// ---------- PerformanceForm ----------
 export default function PerformanceForm() {
   const [form, setForm] = useState({
     name: "",
@@ -31,12 +101,26 @@ export default function PerformanceForm() {
     directionCsv: "",
     castCsv: "",
     crew: [],
-    sessions: [],
+    theaters: [],
     banner: null,
   });
+  const [theatersOptions, setTheatersOptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
   const [bannerPreview, setBannerPreview] = useState(null);
+
+  // carregar lista de teatros
+  useEffect(() => {
+    async function fetchTheaters() {
+      try {
+        const data = await listTheaters();
+        setTheatersOptions(data);
+      } catch (err) {
+        console.error("Erro ao carregar teatros:", err);
+      }
+    }
+    fetchTheaters();
+  }, []);
 
   const set = (key, v) => setForm((f) => ({ ...f, [key]: v }));
 
@@ -62,15 +146,17 @@ export default function PerformanceForm() {
         direction: csvToList(form.directionCsv),
         cast: csvToList(form.castCsv),
         crew: form.crew,
-        sessions: (form.sessions || []).map((s) => ({
-          theater_id: s.theater_id,
-          when: toUtcISOString(s.when),
+        theaters: (form.theaters || []).map((t) => ({
+          theater_id: t.theater_id,
+          sessions: (t.sessions || []).map((s) => ({
+            when: toUtcISOString(s.when),
+          })),
         })),
         banner: form.banner || null,
       };
+
       const res = await createPerformance(payload);
       setMsg({ ok: true, text: `Performance criada: ${res.name}` });
-      // limpa só o nome, deixa o resto pra facilitar entradas em série
       setForm((f) => ({ ...f, name: "", synopsis: "" }));
     } catch (err) {
       setMsg({ ok: false, text: err.message });
@@ -99,7 +185,9 @@ export default function PerformanceForm() {
               onChange={(e) => set("classification", e.target.value)}
             >
               {["Livre", "10", "12", "14", "16", "18"].map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
             </select>
           </label>
@@ -163,9 +251,11 @@ export default function PerformanceForm() {
         </label>
 
         <CrewEditor value={form.crew} onChange={(v) => set("crew", v)} />
-        <SessionsEditor
-          value={form.sessions}
-          onChange={(v) => set("sessions", v)}
+
+        <TheatersEditor
+          value={form.theaters}
+          onChange={(v) => set("theaters", v)}
+          theatersOptions={theatersOptions}
         />
 
         <fieldset>
