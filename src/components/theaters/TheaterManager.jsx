@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listTheaters, updateTheater } from "../api/theaters";
+import { listTheaters, updateTheater } from "../../api/theaters";
 
 export default function TheaterManager() {
   const [theaters, setTheaters] = useState([]);

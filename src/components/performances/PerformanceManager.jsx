@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listPerformances, updatePerformance } from "../api/performances";
+import { listPerformances } from "../../api/performances";
 import PerformanceForm from "./PerformanceForm";
 
 export default function PerformanceManager() {
