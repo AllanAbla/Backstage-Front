@@ -1,6 +1,7 @@
 import { NavLink, Routes, Route } from "react-router-dom";
 import TheaterForm from "./components/TheaterForm.jsx";
 import PerformanceForm from "./components/PerformanceForm.jsx";
+import AdminPanel from "./components/AdminPanel.jsx";
 import MapGLPage from "./pages/MapGl.jsx";
 
 export default function App() {
@@ -12,6 +13,7 @@ export default function App() {
           <nav>
             <NavLink to="/theaters/new">Novo Teatro</NavLink>
             <NavLink to="/performances/new">Nova Performance</NavLink>
+            <NavLink to="/AdminPanel">Editar</NavLink>
             <NavLink to="/map-gl">Mapa</NavLink>
           </nav>
         </div>
@@ -22,7 +24,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/theaters/new" element={<TheaterForm />} />
           <Route path="/performances/new" element={<PerformanceForm />} />
-          {/* Rota do mapa em tela cheia */}
+          <Route path="AdminPanel" element={<AdminPanel/>} />
           <Route path="/map-gl" element={<MapGLPage />} />
         </Routes>
       </main>
