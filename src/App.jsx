@@ -1,8 +1,7 @@
-// src/App.jsx
-import { NavLink, Route, Routes } from "react-router-dom";
-import PerformancesPage from "./components/performances/PerformancesPage.jsx";
-import TheatersPage from "./components/theaters/TheatersPage.jsx";
+import { NavLink, Routes, Route } from "react-router-dom";
 import MapGLPage from "./pages/MapGl.jsx";
+import TheatersPage from "./components/theaters/TheatersPage.jsx";
+import PerformancesPage from "./components/performances/PerformancesPage.jsx";
 
 export default function App() {
   return (
@@ -24,7 +23,6 @@ export default function App() {
           <Route path="/theaters" element={<TheatersPage />} />
           <Route path="/performances" element={<PerformancesPage />} />
           <Route path="/map" element={<MapGLPage />} />
-          {/* fallback simples */}
           <Route path="*" element={<Home />} />
         </Routes>
       </main>
@@ -36,9 +34,7 @@ function Home() {
   return (
     <div className="card">
       <h2>Bem-vindo 👋</h2>
-      <p>
-        Use o menu acima para gerenciar teatros e performances ou abra o Mapa.
-      </p>
+      <p>Use o menu acima para cadastrar teatros e performances, ou abra o Mapa.</p>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createTheater } from "../api/theaters";
+import { createTheater } from "../../api/theaters";
 
 export default function TheaterForm() {
   const [form, setForm] = useState({

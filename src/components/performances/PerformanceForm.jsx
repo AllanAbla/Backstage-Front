@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { createPerformance } from "../api/performances";
-import { listTheaters } from "../api/theaters";
-import CrewEditor from "./performances/CrewEditor";
+import { createPerformance } from "../../api/performances";
+import { listTheaters } from "../../api/theaters";
+import CrewEditor from "./CrewEditor";
 import SessionsEditor, { toUtcISOString } from "./SessionsEditor";
 
 // ---------- Helpers ----------

@@ -1,4 +1,3 @@
-// src/components/TheatersPage.jsx
 import { useState } from "react";
 import TheaterForm from "./TheaterForm";
 import TheaterManager from "./TheaterManager";

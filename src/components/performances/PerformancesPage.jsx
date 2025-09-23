@@ -1,4 +1,3 @@
-// src/components/PerformancesPage.jsx
 import { useState } from "react";
 import PerformanceForm from "./PerformanceForm";
 import PerformanceManager from "./PerformanceManager";
