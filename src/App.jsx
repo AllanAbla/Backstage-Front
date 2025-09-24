@@ -1,7 +1,7 @@
 import { NavLink, Routes, Route } from "react-router-dom";
 import MapGLPage from "./pages/MapGl.jsx";
-import TheatersPage from "./components/theaters/TheatersPage.jsx";
-import PerformancesPage from "./components/performances/PerformancesPage.jsx";
+import TheatersPage from "./pages/Theaters.jsx";
+import PerformancesPage from "./pages/Performances.jsx";
 
 export default function App() {
   return (

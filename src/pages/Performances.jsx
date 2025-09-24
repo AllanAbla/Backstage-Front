@@ -1,6 +1,6 @@
 import { useState } from "react";
-import PerformanceForm from "./PerformanceForm";
-import PerformanceManager from "./PerformanceManager";
+import PerformanceForm from "../components/performances/PerformanceForm";
+import PerformanceManager from "../components/performances/PerformanceManager";
 
 export default function PerformancesPage() {
   const [tab, setTab] = useState("add"); // "add" | "edit"

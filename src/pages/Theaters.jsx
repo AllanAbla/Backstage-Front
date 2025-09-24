@@ -1,6 +1,6 @@
 import { useState } from "react";
-import TheaterForm from "./TheaterForm";
-import TheaterManager from "./TheaterManager";
+import TheaterForm from "../components/theaters/TheaterForm";
+import TheaterManager from "../components/theaters/TheaterManager";
 
 export default function TheatersPage() {
   const [tab, setTab] = useState("add"); // "add" | "edit"
