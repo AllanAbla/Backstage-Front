@@ -1,70 +1,139 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { formatISO } from "date-fns";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import "./calendar-dark.css"; // CSS customizado (dark mode)
+import "./calendar-dark.css"; // ✅ importa teu dark mode
 
-export default function ManualModeForm({ onSubmit }) {
-  const [sessions, setSessions] = useState({});
+export default function ManualModeForm({ onChange }) {
+  const [sessions, setSessions] = useState([]); // [{ date, time }]
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [newTime, setNewTime] = useState("");
 
-  const handleDayClick = (date) => {
-    const dateStr = date.toISOString().split("T")[0];
-    const hour = prompt(`Adicionar horário para ${dateStr} (ex: 20:00):`);
-    if (hour) {
-      setSessions((prev) => ({
-        ...prev,
-        [dateStr]: [...(prev[dateStr] || []), hour],
-      }));
-    }
-  };
-
-  const handleRemove = (date, hour) => {
-    setSessions((prev) => ({
-      ...prev,
-      [date]: prev[date].filter((h) => h !== hour),
+  // ✅ Atualiza automaticamente o pai sempre que a lista muda
+  useEffect(() => {
+    const sessionObjects = sessions.map((s) => ({
+      when: formatISO(new Date(`${s.date}T${s.time}:00`)),
     }));
-  };
+    onChange(sessionObjects);
+  }, [sessions]);
 
-  const handleSubmit = () => {
-    const formatted = Object.entries(sessions)
-      .map(([date, hours]) =>
-        hours.map((h) => ({ date, hour: h }))
+  const addSession = () => {
+    if (!selectedDate || !newTime) return;
+    const date = selectedDate.toISOString().split("T")[0];
+    const updated = [...sessions, { date, time: newTime }];
+
+    // remove duplicadas e ordena cronologicamente
+    const unique = updated.filter(
+      (v, i, a) =>
+        a.findIndex((s) => s.date === v.date && s.time === v.time) === i
+    );
+    setSessions(
+      unique.sort(
+        (a, b) =>
+          new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`)
       )
-      .flat()
-      .sort((a, b) => new Date(`${a.date}T${a.hour}`) - new Date(`${b.date}T${b.hour}`)); // 🔹 Ordenar cronologicamente
-
-    onSubmit({ sessions: formatted });
+    );
+    setNewTime("");
   };
 
-  const sortedDates = Object.keys(sessions).sort(
-    (a, b) => new Date(a) - new Date(b)
-  );
+  const removeSession = (i) => {
+    const updated = [...sessions];
+    updated.splice(i, 1);
+    setSessions(updated);
+  };
 
   return (
-    <div className="manual-mode-form">
-      <Calendar onClickDay={handleDayClick} className="dark-calendar" />
+    <fieldset>
+      <legend>Modo Manual</legend>
 
-      <div className="sessions-list" style={{ marginTop: "1rem" }}>
-        {sortedDates.length === 0 && <p>Nenhuma sessão adicionada.</p>}
-        {sortedDates.map((date) => (
-          <div key={date}>
-            <strong>{date}</strong>
-            <ul>
-              {sessions[date]
-                .sort((a, b) => a.localeCompare(b))
-                .map((h) => (
-                  <li key={`${date}-${h}`}>
-                    {h}{" "}
-                    <button onClick={() => handleRemove(date, h)}>x</button>
-                  </li>
-                ))}
-            </ul>
+      {/* 🗓️ Calendário dark full width */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "1rem",
+          alignItems: "center",
+          width: "100%",
+        }}
+      >
+        <Calendar
+          onChange={setSelectedDate}
+          value={selectedDate}
+          calendarType="gregory"
+          locale="pt-BR"
+          nextLabel="›"
+          prevLabel="‹"
+          next2Label={null}
+          prev2Label={null}
+          className="dark-calendar" // ✅ aplica o tema escuro
+        />
+
+        {/* Seletor de horário */}
+        <div
+          style={{
+            marginTop: "1rem",
+            textAlign: "center",
+            width: "100%",
+          }}
+        >
+          <h4>Adicionar Sessão</h4>
+          <p>
+            Dia selecionado:{" "}
+            <strong>
+              {selectedDate.toLocaleDateString("pt-BR", {
+                weekday: "long",
+                day: "2-digit",
+                month: "2-digit",
+              })}
+            </strong>
+          </p>
+          <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem" }}>
+            <input
+              type="time"
+              value={newTime}
+              onChange={(e) => setNewTime(e.target.value)}
+            />
+            <button type="button" onClick={addSession}>
+              ➕ Adicionar
+            </button>
           </div>
-        ))}
+        </div>
       </div>
 
-      <button onClick={handleSubmit} style={{ marginTop: "1rem" }}>
-        Salvar Sessões
-      </button>
-    </div>
+      {/* Lista de sessões adicionadas */}
+      {sessions.length > 0 && (
+        <div style={{ marginTop: "1.5rem", width: "100%" }}>
+          <h4>Sessões cadastradas</h4>
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {sessions.map((s, i) => (
+              <li
+                key={i}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "0.5rem 0",
+                  borderBottom: "1px solid #333",
+                }}
+              >
+                <span>
+                  {new Date(`${s.date}T${s.time}`).toLocaleString("pt-BR", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })}
+                </span>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => removeSession(i)}
+                >
+                  ❌
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </fieldset>
   );
 }

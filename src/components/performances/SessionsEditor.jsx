@@ -2,22 +2,18 @@ import React, { useState } from "react";
 import RuleModeForm from "./SessionsFillMode/SessionRuleMode";
 import ManualModeForm from "./SessionsFillMode/SessionManualMode";
 
-export default function SessionsEditor({
-  onSubmit,
-  theaters = [],
-  selectedTheater = "",
-}) {
-  const [mode, setMode] = useState("rule"); // 'rule' ou 'manual'
+export default function SessionsEditor({ onChange }) {
+  const [mode, setMode] = useState("rule");
+  const [ruleData, setRuleData] = useState({});
+  const [manualSessions, setManualSessions] = useState([]);
 
-  const handleSubmit = (data) => {
-    if (!selectedTheater) {
-      alert("Selecione um teatro antes de adicionar sessões.");
-      return;
-    }
+  const handleRuleChange = (data) => setRuleData(data);
+  const handleManualChange = (sessions) => setManualSessions(sessions);
 
-    // ✅ Envia o ObjectId do teatro junto no payload
-    onSubmit({ ...data, theater_id: selectedTheater, mode });
-  };
+  // devolve sempre os dados atuais pro form
+  React.useEffect(() => {
+    onChange({ mode, ruleData, manualSessions });
+  }, [mode, ruleData, manualSessions]);
 
   const changeMode = (direction) => {
     if (direction === "left") setMode("rule");
@@ -27,16 +23,7 @@ export default function SessionsEditor({
   return (
     <div className="session-form">
       <h3>Cadastrar Sessões</h3>
-
-      {/* Alternância com setas */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "1rem",
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button type="button" onClick={() => changeMode("left")}>
           &#x276E;
         </button>
@@ -47,9 +34,9 @@ export default function SessionsEditor({
       </div>
 
       {mode === "rule" ? (
-        <RuleModeForm onSubmit={handleSubmit} />
+        <RuleModeForm onChange={handleRuleChange} />
       ) : (
-        <ManualModeForm onSubmit={handleSubmit} />
+        <ManualModeForm onChange={handleManualChange} />
       )}
     </div>
   );

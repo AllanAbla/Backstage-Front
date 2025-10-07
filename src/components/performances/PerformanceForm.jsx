@@ -22,10 +22,36 @@ function fileToBase64(file) {
   });
 }
 
+// ---------- Geração automática das sessões ----------
+function generateSessionsFromRules(ruleData) {
+  if (!ruleData?.rules?.length || !ruleData.startDate || !ruleData.endDate) return [];
+
+  const start = new Date(ruleData.startDate);
+  const end = new Date(ruleData.endDate);
+  const sessions = [];
+
+  for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+    const weekday = date.getDay();
+    ruleData.rules.forEach((rule) => {
+      if (Number(rule.weekday) === weekday) {
+        rule.times.forEach((time) => {
+          if (!time) return;
+          const [h, m] = time.split(":").map(Number);
+          const d = new Date(date);
+          d.setHours(h, m, 0, 0);
+          sessions.push({ when: d.toISOString() });
+        });
+      }
+    });
+  }
+
+  return sessions.sort((a, b) => new Date(a.when) - new Date(b.when));
+}
+
 // ---------- TheatersEditor ----------
 function TheatersEditor({ value, onChange, theatersOptions }) {
   const addTheater = () => {
-    onChange([...value, { theater_id: "", sessions: [] }]);
+    onChange([...value, { theater_id: "", sessions: { mode: "rule", ruleData: {}, manualSessions: [] } }]);
   };
 
   const updateTheater = (index, field, v) => {
@@ -81,8 +107,8 @@ function TheatersEditor({ value, onChange, theatersOptions }) {
           </label>
 
           <SessionsEditor
-            value={theater.sessions}
             onChange={(sessions) => updateSessions(i, sessions)}
+            value={theater.sessions}
           />
 
           <button
@@ -140,12 +166,6 @@ export default function PerformanceForm() {
     setBannerPreview(dataUrl);
   };
 
-  const toUtcISOString = (date) => {
-    if (!date) return null;
-    const d = new Date(date);
-    return d.toISOString();
-  };
-
   const submit = async (e) => {
     e.preventDefault();
     setMsg(null);
@@ -161,12 +181,21 @@ export default function PerformanceForm() {
         direction: csvToList(form.directionCsv),
         cast: csvToList(form.castCsv),
         crew: form.crew,
-        theaters: (form.theaters || []).map((t) => ({
-          theater_id: t.theater_id, // ✅ agora envia o ID real (t.id)
-          sessions: (t.sessions || []).map((s) => ({
-            when: toUtcISOString(s.when),
-          })),
-        })),
+        theaters: (form.theaters || []).map((t) => {
+          let sessions = [];
+
+          // 🔥 Gera sessões automaticamente
+          if (t.sessions?.mode === "rule") {
+            sessions = generateSessionsFromRules(t.sessions.ruleData);
+          } else if (t.sessions?.mode === "manual") {
+            sessions = t.sessions.manualSessions || [];
+          }
+
+          return {
+            theater_id: t.theater_id,
+            sessions,
+          };
+        }),
         banner: form.banner || null,
       };
 
@@ -174,6 +203,7 @@ export default function PerformanceForm() {
       setMsg({ ok: true, text: `Performance criada: ${res.name}` });
       setForm((f) => ({ ...f, name: "", synopsis: "" }));
     } catch (err) {
+      console.error("Erro ao salvar performance:", err);
       setMsg({ ok: false, text: err.message });
     } finally {
       setLoading(false);
