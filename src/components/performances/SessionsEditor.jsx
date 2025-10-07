@@ -1,68 +1,56 @@
-// src/components/SessionsEditor.jsx
-export function toUtcISOString(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  return d.toISOString();
-}
+import React, { useState } from "react";
+import RuleModeForm from "./SessionsFillMode/SessionRuleMode";
+import ManualModeForm from "./SessionsFillMode/SessionManualMode";
 
-export default function SessionsEditor({ value, onChange }) {
-  const sessions = value || [];
+export default function SessionsEditor({
+  onSubmit,
+  theaters = [],
+  selectedTheater = "",
+}) {
+  const [mode, setMode] = useState("rule"); // 'rule' ou 'manual'
 
-  const addSession = () => {
-    onChange([...sessions, { when: "" }]);
+  const handleSubmit = (data) => {
+    if (!selectedTheater) {
+      alert("Selecione um teatro antes de adicionar sessões.");
+      return;
+    }
+
+    // ✅ Envia o ObjectId do teatro junto no payload
+    onSubmit({ ...data, theater_id: selectedTheater, mode });
   };
 
-  const updateSession = (index, val) => {
-    const updated = [...sessions];
-    updated[index].when = val;
-    onChange(updated);
-  };
-
-  const removeSession = (index) => {
-    const updated = [...sessions];
-    updated.splice(index, 1);
-    onChange(updated);
+  const changeMode = (direction) => {
+    if (direction === "left") setMode("rule");
+    else setMode("manual");
   };
 
   return (
-    <fieldset>
-      <legend>Sessões</legend>
+    <div className="session-form">
+      <h3>Cadastrar Sessões</h3>
 
-      {sessions.map((s, i) => (
-        <div
-          key={i}
-          style={{
-            display: "flex",
-            gap: "8px",
-            alignItems: "center",
-            marginTop: "6px",
-          }}
-        >
-          <input
-            type="datetime-local"
-            required
-            value={s.when}
-            onChange={(e) => updateSession(i, e.target.value)}
-          />
-          <button type="button" onClick={() => removeSession(i)}>
-            Remover
-          </button>
-        </div>
-      ))}
-
-      {sessions.length === 0 && <p>Nenhuma sessão adicionada.</p>}
-
-      <button
-        type="button"
-        onClick={addSession}
-        style={{ marginTop: "8px", display: "block" }}
+      {/* Alternância com setas */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "1rem",
+        }}
       >
-        ➕ Adicionar sessão
-      </button>
+        <button type="button" onClick={() => changeMode("left")}>
+          &#x276E;
+        </button>
+        <h4>{mode === "rule" ? "Modo por Regra" : "Modo Manual"}</h4>
+        <button type="button" onClick={() => changeMode("right")}>
+          &#x276F;
+        </button>
+      </div>
 
-      <small style={{ display: "block", marginTop: "4px" }}>
-        O horário é considerado no seu fuso e enviado em UTC para a API.
-      </small>
-    </fieldset>
+      {mode === "rule" ? (
+        <RuleModeForm onSubmit={handleSubmit} />
+      ) : (
+        <ManualModeForm onSubmit={handleSubmit} />
+      )}
+    </div>
   );
 }

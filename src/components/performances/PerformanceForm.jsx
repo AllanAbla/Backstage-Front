@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { createPerformance } from "../../api/performances";
 import { listTheaters } from "../../api/theaters";
 import CrewEditor from "./CrewEditor";
-import SessionsEditor, { toUtcISOString } from "./SessionsEditor";
+import SessionsEditor from "./SessionsEditor";
 
 // ---------- Helpers ----------
 function csvToList(s) {
@@ -57,7 +57,12 @@ function TheatersEditor({ value, onChange, theatersOptions }) {
         <div
           key={i}
           className="theater-block"
-          style={{ border: "1px solid #ccc", padding: 10, marginTop: 10 }}
+          style={{
+            border: "1px solid #ccc",
+            padding: 10,
+            marginTop: 10,
+            borderRadius: 8,
+          }}
         >
           <label>
             Teatro*
@@ -68,7 +73,7 @@ function TheatersEditor({ value, onChange, theatersOptions }) {
             >
               <option value="">Selecione...</option>
               {theatersOptions.map((t) => (
-                <option key={t._id} value={t._id}>
+                <option key={t.id} value={t.id}>
                   {t.name}
                 </option>
               ))}
@@ -80,7 +85,11 @@ function TheatersEditor({ value, onChange, theatersOptions }) {
             onChange={(sessions) => updateSessions(i, sessions)}
           />
 
-          <button type="button" onClick={() => removeTheater(i)}>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => removeTheater(i)}
+          >
             ❌ Remover Teatro
           </button>
         </div>
@@ -131,6 +140,12 @@ export default function PerformanceForm() {
     setBannerPreview(dataUrl);
   };
 
+  const toUtcISOString = (date) => {
+    if (!date) return null;
+    const d = new Date(date);
+    return d.toISOString();
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setMsg(null);
@@ -147,7 +162,7 @@ export default function PerformanceForm() {
         cast: csvToList(form.castCsv),
         crew: form.crew,
         theaters: (form.theaters || []).map((t) => ({
-          theater_id: t.theater_id,
+          theater_id: t.theater_id, // ✅ agora envia o ID real (t.id)
           sessions: (t.sessions || []).map((s) => ({
             when: toUtcISOString(s.when),
           })),
