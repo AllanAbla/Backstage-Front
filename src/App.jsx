@@ -1,21 +1,15 @@
-import { NavLink, Routes, Route } from "react-router-dom";
+// src/App.jsx
+import { Routes, Route } from "react-router-dom";
 import MapGLPage from "./pages/MapGl.jsx";
 import TheatersPage from "./pages/Theaters.jsx";
 import PerformancesPage from "./pages/Performances.jsx";
+import BackstageNavbar from "./components/BackstageNavbar.jsx";
 
 export default function App() {
   return (
     <>
-      <header className="topbar">
-        <div className="topbar-inner">
-          <h1>Backstage Admin</h1>
-          <nav>
-            <NavLink to="/theaters">Teatros</NavLink>
-            <NavLink to="/performances">Performances</NavLink>
-            <NavLink to="/map">Mapa</NavLink>
-          </nav>
-        </div>
-      </header>
+      {/* Nova navbar dinâmica */}
+      <BackstageNavbar />
 
       <main className="container">
         <Routes>
@@ -34,7 +28,7 @@ function Home() {
   return (
     <div className="card">
       <h2>Bem-vindo 👋</h2>
-      <p>Use o menu acima para cadastrar teatros e performances, ou abra o Mapa.</p>
+      <p>Use o menu para cadastrar teatros e performances, ou abra o Mapa.</p>
     </div>
   );
 }
