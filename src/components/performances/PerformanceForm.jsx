@@ -184,7 +184,6 @@ export default function PerformanceForm() {
         theaters: (form.theaters || []).map((t) => {
           let sessions = [];
 
-          // 🔥 Gera sessões automaticamente
           if (t.sessions?.mode === "rule") {
             sessions = generateSessionsFromRules(t.sessions.ruleData);
           } else if (t.sessions?.mode === "manual") {
@@ -192,7 +191,7 @@ export default function PerformanceForm() {
           }
 
           return {
-            theater_id: t.theater_id,
+            theater_id: parseInt(t.theater_id),
             sessions,
           };
         }),

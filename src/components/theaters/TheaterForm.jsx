@@ -1,10 +1,22 @@
 import { useState } from "react";
 import { createTheater } from "../../api/theaters";
+import { useNavigate } from "react-router-dom";
+import "./theaterForm.css";
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function TheaterForm() {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
     name: "",
-    slug: "",
     address: {
       street: "",
       neighborhood: "",
@@ -13,12 +25,16 @@ export default function TheaterForm() {
       postal_code: "",
       country: "BR",
     },
-    location: { type: "Point", coordinates: ["", ""] }, // [lng, lat]
-    contacts: { website: "" },
+    location: { type: "Point", coordinates: ["", ""] },
+    contacts: { website: "", instagram: "", phone: "" },
+    photo: null,
   });
+
+  const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
 
+  // Atualizador profundo
   const set = (path, val) => {
     setForm((f) => {
       const next = structuredClone(f);
@@ -30,24 +46,38 @@ export default function TheaterForm() {
     });
   };
 
+  // Upload da foto
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const base64 = await fileToBase64(file);
+    set("photo", base64);
+    setPreview(base64);
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setMsg(null);
     setLoading(true);
+
     try {
       const lng = parseFloat(form.location.coordinates[0]);
       const lat = parseFloat(form.location.coordinates[1]);
       if (Number.isNaN(lng) || Number.isNaN(lat))
         throw new Error("Coordenadas inválidas");
+
       const payload = {
         ...form,
         location: { type: "Point", coordinates: [lng, lat] },
-        contacts: form.contacts.website ? form.contacts : null,
+        contacts:
+          Object.values(form.contacts).some((v) => v?.trim()) ?
+          form.contacts : null,
       };
-      const res = await createTheater(payload);
-      setMsg({ ok: true, text: `Teatro criado: ${res.name}` });
-      // limpa só o essencial
-      setForm((f) => ({ ...f, name: "", slug: "" }));
+
+      const newTheater = await createTheater(payload);
+      navigate(`/theaters/${newTheater.id}`);
+
     } catch (err) {
       setMsg({ ok: false, text: err.message });
     } finally {
@@ -56,116 +86,160 @@ export default function TheaterForm() {
   };
 
   return (
-    <div className="card">
+    <div className="theater-form-page">
+
       <h2>Novo Teatro</h2>
-      <form onSubmit={submit} className="form">
-        <div className="grid2">
-          <label>
-            Nome*
+
+      <form className="theater-form" onSubmit={submit}>
+
+
+        {/* FOTO + CAMPOS PRINCIPAIS */}
+        <div className="photo-and-main">
+          
+          {/* FOTO */}
+          <label className="photo-box">
+            {preview ? (
+              <img src={preview} alt="preview" className="photo-preview" />
+            ) : (
+              <span>Clique para enviar foto</span>
+            )}
             <input
-              required
-              value={form.name}
-              onChange={(e) => set("name", e.target.value)}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handlePhotoChange}
             />
           </label>
-          <label>
-            Slug* (único)
-            <input
-              required
-              value={form.slug}
-              onChange={(e) => set("slug", e.target.value)}
-            />
-          </label>
+
+          {/* CAMPOS PRINCIPAIS */}
+          <div className="main-fields">
+            <label>
+              Nome*
+              <input
+                required
+                value={form.name}
+                onChange={(e) => set("name", e.target.value)}
+              />
+            </label>
+
+            <fieldset>
+              <legend>Endereço</legend>
+
+              <label>
+                Rua
+                <input
+                  value={form.address.street}
+                  onChange={(e) => set("address.street", e.target.value)}
+                />
+              </label>
+
+              <div className="grid2">
+                <label>
+                  Bairro
+                  <input
+                    value={form.address.neighborhood}
+                    onChange={(e) => set("address.neighborhood", e.target.value)}
+                  />
+                </label>
+              </div>
+
+              <div className="grid3">
+                <label>
+                  Cidade
+                  <input
+                    value={form.address.city}
+                    onChange={(e) => set("address.city", e.target.value)}
+                  />
+                </label>
+
+                <label>
+                  Estado
+                  <input
+                    value={form.address.state}
+                    onChange={(e) => set("address.state", e.target.value)}
+                  />
+                </label>
+
+                <label>
+                  CEP
+                  <input
+                    value={form.address.postal_code}
+                    onChange={(e) =>
+                      set("address.postal_code", e.target.value)
+                    }
+                  />
+                </label>
+              </div>
+            </fieldset>
+          </div>
         </div>
 
-        <fieldset>
-          <legend>Endereço</legend>
-          <div className="grid2">
-            <label>
-              Rua
-              <input
-                value={form.address.street}
-                onChange={(e) => set("address.street", e.target.value)}
-              />
-            </label>
-            <label>
-              Bairro
-              <input
-                value={form.address.neighborhood}
-                onChange={(e) =>
-                  set("address.neighborhood", e.target.value)
-                }
-              />
-            </label>
-          </div>
-          <div className="grid3">
-            <label>
-              Cidade
-              <input
-                value={form.address.city}
-                onChange={(e) => set("address.city", e.target.value)}
-              />
-            </label>
-            <label>
-              Estado
-              <input
-                value={form.address.state}
-                onChange={(e) => set("address.state", e.target.value)}
-              />
-            </label>
-            <label>
-              CEP
-              <input
-                value={form.address.postal_code}
-                onChange={(e) => set("address.postal_code", e.target.value)}
-              />
-            </label>
-          </div>
-        </fieldset>
 
+        {/* LOCALIZAÇÃO */}
         <fieldset>
-          <legend>Localização (GeoJSON)</legend>
+          <legend>Localização</legend>
+
           <div className="grid2">
             <label>
               Longitude (lng)*
               <input
                 required
                 value={form.location.coordinates[0]}
-                onChange={(e) =>
-                  set("location.coordinates.0", e.target.value)
-                }
+                onChange={(e) => set("location.coordinates.0", e.target.value)}
               />
             </label>
+
             <label>
               Latitude (lat)*
               <input
                 required
                 value={form.location.coordinates[1]}
-                onChange={(e) =>
-                  set("location.coordinates.1", e.target.value)
-                }
+                onChange={(e) => set("location.coordinates.1", e.target.value)}
               />
             </label>
           </div>
         </fieldset>
 
-        <label>
-          Site
-          <input
-            placeholder="https://..."
-            value={form.contacts.website}
-            onChange={(e) => set("contacts.website", e.target.value)}
-          />
-        </label>
 
-        <div className="actions">
-          <button disabled={loading}>{loading ? "Salvando..." : "Salvar"}</button>
-        </div>
+        {/* CONTATOS */}
+        <fieldset>
+          <legend>Contatos</legend>
+
+          <label>
+            Site
+            <input
+              placeholder="https://..."
+              value={form.contacts.website}
+              onChange={(e) => set("contacts.website", e.target.value)}
+            />
+          </label>
+
+          <label>
+            Instagram
+            <input
+              placeholder="@perfil"
+              value={form.contacts.instagram}
+              onChange={(e) => set("contacts.instagram", e.target.value)}
+            />
+          </label>
+
+          <label>
+            Telefone
+            <input
+              placeholder="(11) 99999-9999"
+              value={form.contacts.phone}
+              onChange={(e) => set("contacts.phone", e.target.value)}
+            />
+          </label>
+        </fieldset>
+
+
+        <button disabled={loading}>
+          {loading ? "Salvando..." : "Salvar"}
+        </button>
 
         {msg && (
-          <p className={msg.ok ? "ok" : "err"} role="alert">
-            {msg.text}
-          </p>
+          <p className={msg.ok ? "ok" : "err"}>{msg.text}</p>
         )}
       </form>
     </div>
