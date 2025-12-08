@@ -1,131 +1,139 @@
 .theaters-home {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  height: 100vh;
   position: relative;
-  width: 100%;
-  height: 100vh;           /* garante que não corta */
-  overflow: hidden;        /* remove qualquer scroll desnecessário */
+  overflow: hidden;
+  transition: grid-template-columns 0.35s ease; /* anima expansão */
 }
 
-/* Fundo borrado */
-.bg-blur {
+/* EXPANSÃO DA COLUNA ESQUERDA */
+.theaters-home.hover-left {
+  grid-template-columns: 1.2fr 1px 0.8fr;
+}
+
+/* EXPANSÃO DA COLUNA DIREITA */
+.theaters-home.hover-right {
+  grid-template-columns: 0.8fr 1px 1.2fr;
+}
+
+/* --- COLUNAS --- */
+.side {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.vertical-divider {
+  background: rgba(255,255,255,0.1);
+  transition: background 0.3s ease, opacity 0.3s ease;
+}
+
+/* Linha mais visível quando há hover */
+.theaters-home.hover-left .vertical-divider,
+.theaters-home.hover-right .vertical-divider {
+  opacity: 0.45;
+}
+
+/* --- BACKGROUNDS INDIVIDUAIS --- */
+.side-bg {
   position: absolute;
   inset: 0;
-  background: url("/bg.jpg"), #0b0d10;
   background-size: cover;
   background-position: center;
-  filter: blur(12px) brightness(0.35);
-  z-index: -1;
+  filter: blur(6px) brightness(0.5);
+  transform: scale(1.1);
+  z-index: 1;
+  transition: 0.3s ease;
 }
 
-/* Container lado a lado */
-.split-container {
+.left-bg {
+  background-image: url("src/public/teatro-palco.jpg");
+}
+
+.right-bg {
+  background-image: url("src/public/teatro-cadeiras.jpg");
+}
+
+/* Hover aumenta brilho */
+.side:hover .side-bg {
+  filter: blur(4px) brightness(0.8);
+  transform: scale(1.05);
+}
+
+/* --- CONTEÚDO DA OPÇÃO --- */
+.side-content {
   position: relative;
-  z-index: 10;
-  display: flex;
-  width: 100%;
-  height: 100%;
-}
-
-/* Cada lado */
-.option {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center; /* CENTRALIZA VERTICALMENTE */
-  transition: background 0.25s ease, transform 0.25s ease;
-  cursor: pointer;
-}
-
-/* Hover cobre o lado inteiro */
-.option:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* Ícone grande */
-.icon {
-  font-size: 72px;
-  margin-bottom: 12px;
-}
-
-.option h2 {
-  font-size: 32px;
-  margin: 0;
-}
-
-.option p {
-  opacity: 0.8;
-  margin-top: 4px;
-}
-
-/* A linha divisória */
-.divider {
-  width: 2px;
-  background: rgba(255, 255, 255, 0.3);
-  z-index: 20;
-}
-
-/* LISTA DE TEATROS (modo editar) */
-.option-list {
-  flex: 1;
-  padding: 40px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.option-list h3 {
-  margin-bottom: 20px;
-}
-
-.option-list ul {
-  width: 100%;
-  max-width: 360px;
-  list-style: none;
-  padding: 0;
-}
-
-.option-list li {
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
-  cursor: pointer;
-  margin-bottom: 6px;
-  transition: background 0.2s;
-}
-
-.option-list li:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.back-btn {
-  margin-top: 20px;
-  padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.back-btn:hover {
-  background: rgba(255, 255, 255, 0.35);
-}
-
-/* Wrapper interno que vai animar */
-.option-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  z-index: 2;
+  text-align: center;
   transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
-/* Efeito de salto no hover */
-.option:hover .option-content {
-  transform: translateY(-6px) scale(1.06);
+.side:hover .side-content {
+  transform: translateY(-6px) scale(1.04);
   opacity: 1;
 }
 
-/* Ícone ganha um pouco mais de destaque no hover */
-.option:hover .icon {
-  filter: brightness(1.2);
+/* Ícones */
+.icon {
+  font-size: 42px;
+  margin-bottom: 10px;
+}
+
+.side-content h2 {
+  font-size: 28px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.side-content p {
+  opacity: 0.8;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+/* --- LISTA DE TEATROS --- */
+.option-list {
+  position: relative;
+  z-index: 2;
+  width: 60%;
+  text-align: left;
+  color: #fff;
+}
+
+.option-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.option-list li {
+  padding: 10px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.option-list li:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+/* Botão voltar */
+.back-btn {
+  padding: 8px 14px;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: transparent;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.back-btn:hover {
+  background: rgba(255,255,255,0.15);
 }

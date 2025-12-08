@@ -7,49 +7,48 @@ export default function TheatersHome() {
   const navigate = useNavigate();
   const [theaters, setTheaters] = useState([]);
   const [selecting, setSelecting] = useState(false);
+  const [hover, setHover] = useState(""); // ← controla expansão
 
   useEffect(() => {
     listTheaters().then(setTheaters).catch(console.error);
   }, []);
 
   return (
-    <div className="theaters-home">
-
-      {/* Fundo borrado */}
-      <div className="bg-blur" />
-
-      {/* Container dividido */}
-      <div className="split-container">
-
-        {/* ------------------------------------------------ */}
-        {/* LADO ESQUERDO — NOVO */}
-        {/* ------------------------------------------------ */}
-        <div className="option side-left" onClick={() => navigate("/theaters/new")}>
-          <div className="option-content">
-            <div className="icon">+</div>
-            <h2>novo</h2>
-            <p>criar um novo teatro</p>
-          </div>
+    <div className={`theaters-home ${hover}`}>
+      {/* NOVO */}
+      <div
+        className="side side-left"
+        onMouseEnter={() => setHover("hover-left")}
+        onMouseLeave={() => setHover("")}
+        onClick={() => navigate("/theaters/new")}
+      >
+        <div className="side-bg left-bg" />
+        <div className="side-content">
+          <div className="icon">+</div>
+          <h2>novo</h2>
+          <p>criar um novo teatro</p>
         </div>
+      </div>
 
-        {/* Linha divisória */}
-        <div className="divider"></div>
+      <div className="vertical-divider"></div>
 
-        {/* ------------------------------------------------ */}
-        {/* LADO DIREITO — EDITAR */}
-        {/* ------------------------------------------------ */}
+      {/* EDITAR */}
+      <div
+        className="side side-right"
+        onMouseEnter={() => setHover("hover-right")}
+        onMouseLeave={() => setHover("")}
+      >
+        <div className="side-bg right-bg" />
+
         {!selecting ? (
-          <div className="option side-right" onClick={() => setSelecting(true)}>
-            <div className="option-content">
-              <div className="icon">✎</div>
-              <h2>editar</h2>
-              <p>selecionar e editar teatro</p>
-            </div>
+          <div className="side-content" onClick={() => setSelecting(true)}>
+            <div className="icon">✎</div>
+            <h2>editar</h2>
+            <p>selecionar e editar teatro</p>
           </div>
         ) : (
-          <div className="option-list side-right">
+          <div className="option-list">
             <h3>Selecione um teatro</h3>
-
             <ul>
               {theaters.map((t) => (
                 <li key={t.id} onClick={() => navigate(`/theaters/${t.id}`)}>
@@ -57,7 +56,6 @@ export default function TheatersHome() {
                 </li>
               ))}
             </ul>
-
             <button onClick={() => setSelecting(false)} className="back-btn">
               voltar
             </button>
