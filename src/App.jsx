@@ -1,5 +1,4 @@
 import { Routes, Route } from "react-router-dom";
-
 import BackstageNavbar from "./components/BackstageNavbar.jsx";
 
 // Páginas
@@ -8,6 +7,8 @@ import PerformancesPage from "./pages/Performances.jsx";
 import TheatersHome from "./pages/TheatersHome.jsx";
 import TheaterForm from "./components/theaters/TheaterForm.jsx";
 import TheaterDetailsPage from "./pages/TheaterDetails.jsx";
+import TheatersEdit from "./pages/TheatersEdit.jsx";
+import TheatersEditList from "./pages/TheatersEditList.jsx";
 
 export default function App() {
   return (
@@ -24,6 +25,9 @@ export default function App() {
           <Route path="/theaters" element={<TheatersHome />} />
           <Route path="/theaters/new" element={<TheaterForm />} />
           <Route path="/theaters/:id" element={<TheaterDetailsPage />} />
+          <Route path="/theaters/edit" element={<TheatersEdit />} />
+          <Route path="/theaters/:id/edit" element={<TheaterForm />} />
+          <Route path="/theaters/edit" element={<TheatersEditList />} />
 
           {/* Performances */}
           <Route path="/performances" element={<PerformancesPage />} />

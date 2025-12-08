@@ -209,7 +209,7 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 500;
-  color: var(--sm-accent, #4aa8ff);
+  color: var(--sm-accent, #C62828);
 }
 
 .sm-socials-list {
@@ -236,7 +236,7 @@
 }
 
 .sm-socials-link:focus-visible {
-  outline: 2px solid var(--sm-accent, #4aa8ff);
+  outline: 2px solid var(--sm-accent, #C62828);
   outline-offset: 3px;
 }
 
@@ -262,7 +262,7 @@
 }
 
 .sm-socials-link:hover {
-  color: var(--sm-accent, #4aa8ff);
+  color: var(--sm-accent, #E53935);
 }
 
 /* Lista principal de itens */
@@ -325,7 +325,7 @@
 }
 
 .sm-panel-item:hover {
-  color: var(--sm-accent, #4aa8ff);
+  color: var(--sm-accent, #E53935);
 }
 
 /* Numeração dos itens */
@@ -341,7 +341,7 @@
   right: 2.8em;
   font-size: 18px;
   font-weight: 400;
-  color: var(--sm-accent, #4aa8ff);
+  color: var(--sm-accent, #C62828);
   letter-spacing: 0;
   pointer-events: none;
   user-select: none;

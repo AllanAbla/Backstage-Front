@@ -1,9 +1,11 @@
+// src/pages/TheaterDetails.jsx
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 import { getTheater } from "../api/theaters";
+import { useParams, useNavigate } from "react-router-dom";
 
 export default function TheaterDetailsPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [theater, setTheater] = useState(null);
 
   useEffect(() => {
@@ -17,31 +19,38 @@ export default function TheaterDetailsPage() {
   if (!theater) return <p>Carregando...</p>;
 
   return (
-    <div className="card">
+    <div className="theater-form-page">
       <h2>{theater.name}</h2>
 
-      {theater.photo_base64 && (
+      {theater.photo && (
         <img
-          src={theater.photo_base64}
-          alt={theater.name}
-          style={{ width: "100%", maxHeight: 280, objectFit: "cover", borderRadius: 12 }}
+          src={theater.photo}
+          alt="Foto do teatro"
+          style={{
+            width: "320px",
+            borderRadius: "12px",
+            marginBottom: "20px"
+          }}
         />
       )}
 
       <h3>Endereço</h3>
-      <p>
-        {theater.street}<br />
-        {theater.neighborhood}<br />
-        {theater.city} - {theater.state}<br />
-        CEP: {theater.postal_code}
-      </p>
+      <p>{theater.address.street}</p>
+      <p>{theater.address.neighborhood}</p>
+      <p>{theater.address.city} - {theater.address.state}</p>
+      <p>CEP: {theater.address.postal_code}</p>
 
-      {theater.website && (
-        <>
-          <h3>Site</h3>
-          <a href={theater.website} target="_blank">{theater.website}</a>
-        </>
-      )}
+      <h3>Contato</h3>
+      <p>Site: {theater.contacts.website}</p>
+      <p>Instagram: {theater.contacts.instagram}</p>
+      <p>Telefone: {theater.contacts.phone}</p>
+
+      <button
+        style={{ marginTop: "30px" }}
+        onClick={() => navigate(`/theaters/${id}/edit`)}
+      >
+        Editar Teatro
+      </button>
     </div>
   );
 }

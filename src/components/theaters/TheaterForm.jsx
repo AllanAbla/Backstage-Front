@@ -1,6 +1,10 @@
-import { useState } from "react";
-import { createTheater } from "../../api/theaters";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import {
+  createTheater,
+  getTheater,
+  updateTheater,
+} from "../../api/theaters";
+import { useNavigate, useParams } from "react-router-dom";
 import "./theaterForm.css";
 
 function fileToBase64(file) {
@@ -14,6 +18,7 @@ function fileToBase64(file) {
 
 export default function TheaterForm() {
   const navigate = useNavigate();
+  const { id } = useParams(); // <-- detecta modo edição
 
   const [form, setForm] = useState({
     name: "",
@@ -34,7 +39,26 @@ export default function TheaterForm() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
 
+  // ---------------------------------------------------------
+  // CARREGAR TEATRO NO MODO EDIÇÃO
+  // ---------------------------------------------------------
+  useEffect(() => {
+    async function load() {
+      if (!id) return; // modo criação
+      try {
+        const data = await getTheater(id);
+        setForm(data);
+        setPreview(data.photo || null);
+      } catch {
+        setMsg({ ok: false, text: "Erro ao carregar teatro" });
+      }
+    }
+    load();
+  }, [id]);
+
+  // ---------------------------------------------------------
   // Atualizador profundo
+  // ---------------------------------------------------------
   const set = (path, val) => {
     setForm((f) => {
       const next = structuredClone(f);
@@ -46,7 +70,9 @@ export default function TheaterForm() {
     });
   };
 
-  // Buscar CEP automaticamente
+  // ---------------------------------------------------------
+  // Buscar CEP automaticamente (Brasil)
+  // ---------------------------------------------------------
   async function fetchCEP() {
     const cep = form.address.postal_code.replace(/\D/g, "");
     if (cep.length !== 8) return;
@@ -70,7 +96,9 @@ export default function TheaterForm() {
     }
   }
 
+  // ---------------------------------------------------------
   // Upload da foto
+  // ---------------------------------------------------------
   const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -80,7 +108,9 @@ export default function TheaterForm() {
     setPreview(base64);
   };
 
-  // SUBMIT
+  // ---------------------------------------------------------
+  // SUBMIT – criação ou edição
+  // ---------------------------------------------------------
   const submit = async (e) => {
     e.preventDefault();
     setMsg(null);
@@ -89,6 +119,7 @@ export default function TheaterForm() {
     try {
       const lng = parseFloat(form.location.coordinates[0]);
       const lat = parseFloat(form.location.coordinates[1]);
+
       if (Number.isNaN(lng) || Number.isNaN(lat))
         throw new Error("Coordenadas inválidas");
 
@@ -96,12 +127,21 @@ export default function TheaterForm() {
         ...form,
         location: { type: "Point", coordinates: [lng, lat] },
         contacts:
-          Object.values(form.contacts).some((v) => v?.trim()) ?
-          form.contacts : null,
+          Object.values(form.contacts).some((v) => v?.trim())
+            ? form.contacts
+            : null,
       };
 
-      const newTheater = await createTheater(payload);
-      navigate(`/theaters/${newTheater.id}`);
+      if (id) {
+        // MODO EDITAR
+        await updateTheater(id, payload);
+        setMsg({ ok: true, text: "Teatro atualizado com sucesso!" });
+        setTimeout(() => navigate(`/theaters/${id}`), 800);
+      } else {
+        // MODO CRIAR
+        const newTheater = await createTheater(payload);
+        navigate(`/theaters/${newTheater.id}`);
+      }
 
     } catch (err) {
       setMsg({ ok: false, text: err.message });
@@ -113,13 +153,13 @@ export default function TheaterForm() {
   return (
     <div className="theater-form-page">
 
-      <h2>Novo Teatro</h2>
+      <h2>{id ? "Editar Teatro" : "Novo Teatro"}</h2>
 
       <form className="theater-form" onSubmit={submit}>
 
         {/* FOTO + CAMPOS PRINCIPAIS */}
         <div className="photo-and-main">
-          
+
           {/* FOTO */}
           <label className="photo-box">
             {preview ? (
@@ -137,6 +177,8 @@ export default function TheaterForm() {
 
           {/* CAMPOS PRINCIPAIS */}
           <div className="main-fields">
+            
+            {/* Nome */}
             <label>
               Nome*
               <input
@@ -146,11 +188,11 @@ export default function TheaterForm() {
               />
             </label>
 
-            {/* ENDEREÇO */}
+            {/* Endereço */}
             <fieldset>
               <legend>Endereço</legend>
 
-              {/* CEP PRIMEIRO */}
+              {/* CEP */}
               <label>
                 CEP*
                 <input
@@ -262,13 +304,12 @@ export default function TheaterForm() {
           </label>
         </fieldset>
 
+        {/* BOTÃO */}
         <button disabled={loading}>
-          {loading ? "Salvando..." : "Salvar"}
+          {loading ? "Salvando..." : id ? "Salvar alterações" : "Salvar"}
         </button>
 
-        {msg && (
-          <p className={msg.ok ? "ok" : "err"}>{msg.text}</p>
-        )}
+        {msg && <p className={msg.ok ? "ok" : "err"}>{msg.text}</p>}
       </form>
     </div>
   );

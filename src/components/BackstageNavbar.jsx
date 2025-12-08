@@ -34,9 +34,9 @@ export default function BackstageNavbar() {
       menuButtonColor="#e8eef3"
       openMenuButtonColor="#e8eef3"
       changeMenuColorOnOpen={true}
-      colors={["#171e25", "#4aa8ff"]}
+      colors={["#171e25", "#C62828"]}
       logoUrl=""             
-      accentColor="#4aa8ff"
+      accentColor="#C62828"
       isFixed={true} 
       onMenuOpen={() => {}}
       onMenuClose={() => {}}
