@@ -20,8 +20,8 @@ export default function TheaterForm() {
     address: {
       street: "",
       neighborhood: "",
-      city: "São Paulo",
-      state: "SP",
+      city: "",
+      state: "",
       postal_code: "",
       country: "BR",
     },
@@ -46,6 +46,30 @@ export default function TheaterForm() {
     });
   };
 
+  // Buscar CEP automaticamente
+  async function fetchCEP() {
+    const cep = form.address.postal_code.replace(/\D/g, "");
+    if (cep.length !== 8) return;
+
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+
+      if (data.erro) {
+        setMsg({ ok: false, text: "CEP não encontrado" });
+        return;
+      }
+
+      set("address.street", data.logradouro || "");
+      set("address.neighborhood", data.bairro || "");
+      set("address.city", data.localidade || "");
+      set("address.state", data.uf || "");
+
+    } catch (err) {
+      setMsg({ ok: false, text: "Erro ao consultar CEP" });
+    }
+  }
+
   // Upload da foto
   const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
@@ -56,6 +80,7 @@ export default function TheaterForm() {
     setPreview(base64);
   };
 
+  // SUBMIT
   const submit = async (e) => {
     e.preventDefault();
     setMsg(null);
@@ -92,7 +117,6 @@ export default function TheaterForm() {
 
       <form className="theater-form" onSubmit={submit}>
 
-
         {/* FOTO + CAMPOS PRINCIPAIS */}
         <div className="photo-and-main">
           
@@ -122,8 +146,25 @@ export default function TheaterForm() {
               />
             </label>
 
+            {/* ENDEREÇO */}
             <fieldset>
               <legend>Endereço</legend>
+
+              {/* CEP PRIMEIRO */}
+              <label>
+                CEP*
+                <input
+                  placeholder="00000-000"
+                  value={form.address.postal_code}
+                  maxLength={9}
+                  onBlur={fetchCEP}
+                  onChange={(e) => {
+                    let v = e.target.value.replace(/\D/g, "");
+                    if (v.length > 5) v = v.replace(/(\d{5})(\d)/, "$1-$2");
+                    set("address.postal_code", v);
+                  }}
+                />
+              </label>
 
               <label>
                 Rua
@@ -159,21 +200,10 @@ export default function TheaterForm() {
                     onChange={(e) => set("address.state", e.target.value)}
                   />
                 </label>
-
-                <label>
-                  CEP
-                  <input
-                    value={form.address.postal_code}
-                    onChange={(e) =>
-                      set("address.postal_code", e.target.value)
-                    }
-                  />
-                </label>
               </div>
             </fieldset>
           </div>
         </div>
-
 
         {/* LOCALIZAÇÃO */}
         <fieldset>
@@ -199,7 +229,6 @@ export default function TheaterForm() {
             </label>
           </div>
         </fieldset>
-
 
         {/* CONTATOS */}
         <fieldset>
@@ -232,7 +261,6 @@ export default function TheaterForm() {
             />
           </label>
         </fieldset>
-
 
         <button disabled={loading}>
           {loading ? "Salvando..." : "Salvar"}
