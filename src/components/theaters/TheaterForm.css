@@ -34,7 +34,7 @@
 .photo-box {
   width: 370px;
   height: 370px;
-  border: 2px dashed #4aa8ff55;
+  border: 2px dashed #C6282855;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -48,7 +48,7 @@
 }
 
 .photo-box:hover {
-  border-color: #4aa8ff;
+  border-color: #E53935;
   transform: scale(1.02);
 }
 
@@ -82,7 +82,7 @@
 }
 
 .theater-form input:focus {
-  border-color: #4aa8ff;
+  border-color: #C62828;
   outline: none;
 }
 
@@ -129,7 +129,7 @@ legend {
 .theater-form button {
   width: 100%;
   padding: 14px;
-  background: #4aa8ff;
+  background: #C62828;
   border-radius: 8px;
   color: white;
   font-size: 16px;

@@ -7,8 +7,8 @@
   --text: #e8eef3;          /* main text */
   --muted: #9fb0bf;         /* secondary text */
   --border: #25303a;        /* subtle borders */
-  --primary: #4aa8ff;       /* brand/cta */
-  --primary-600: #3899f5;
+  --primary: #C62828;       /* brand/cta */
+  --primary-600: #C62828;
   --danger: #ff5c7a;
   --ok: #34d399;
 
@@ -166,7 +166,7 @@ img{ border: 1px solid var(--border); border-radius: 10px; }
 .maplibregl-popup-anchor-right  .maplibregl-popup-tip { border-left-color:   #0f1419; }
 
 /* título/link dentro do popup (se houver) */
-.maplibregl-popup-content a { color: #4aa8ff; }
+.maplibregl-popup-content a { color: #C62828; }
 .maplibregl-popup-content strong { color: #e8eef3; }
 
 /* ====== MAPA EM TELA CHEIA ====== */
