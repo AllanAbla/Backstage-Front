@@ -154,7 +154,13 @@ export default function TheaterForm() {
 
   return (
     <div className="theater-form-page">
-      <h2>{id ? "Editar Teatro" : "Novo Teatro"}</h2>
+      <div className="tf-header">
+        <span className="tf-back" onClick={() => navigate(-1)}>
+          ← voltar
+        </span>
+        <h2 className="tf-title">{id ? "Editar Teatro" : "Cadastrar Novo Teatro"}</h2>
+        <span></span> {/* só para equilibrar o layout */}
+      </div>
 
       <form className="theater-form" onSubmit={submit}>
         {/* FOTO + CAMPOS PRINCIPAIS */}
@@ -190,57 +196,88 @@ export default function TheaterForm() {
             <fieldset>
               <legend>Endereço</legend>
 
-              {/* CEP */}
-              <label>
-                CEP*
-                <input
-                  required
-                  placeholder="00000-000"
-                  value={form.address.postal_code}
-                  maxLength={9}
-                  onBlur={fetchCEP}
-                  onChange={(e) => {
-                    let v = e.target.value.replace(/\D/g, "");
-                    if (v.length > 5) v = v.replace(/(\d{5})(\d)/, "$1-$2");
-                    set("address.postal_code", v);
-                  }}
-                />
-              </label>
-
-              <label>
-                Rua
-                <input
-                  value={form.address.street}
-                  onChange={(e) => set("address.street", e.target.value)}
-                />
-              </label>
-
-              <div className="grid2">
+              {/* PRIMEIRA LINHA */}
+              <div className="grid4">
                 <label>
-                  Bairro
-                  <input
-                    value={form.address.neighborhood}
+                  País
+                  <select
+                    value={form.country || "BR"}
                     onChange={(e) =>
-                      set("address.neighborhood", e.target.value)
+                      setForm({ ...form, country: e.target.value })
+                    }
+                  >
+                    <option value="BR">Brasil</option>
+                    <option value="US">EUA</option>
+                    <option value="PT">Portugal</option>
+                    <option value="AR">Argentina</option>
+                  </select>
+                </label>
+
+                <label>
+                  Zip-Code*
+                  <input
+                    type="text"
+                    placeholder="00000-000"
+                    value={form.postal_code || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, postal_code: e.target.value })
+                    }
+                  />
+                </label>
+
+                <label>
+                  Endereço*
+                  <input
+                    type="text"
+                    value={form.street || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, street: e.target.value })
+                    }
+                  />
+                </label>
+
+                <label>
+                  Número
+                  <input
+                    type="text"
+                    value={form.number || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, number: e.target.value })
                     }
                   />
                 </label>
               </div>
 
+              {/* SEGUNDA LINHA */}
               <div className="grid3">
+                <label>
+                  Bairro
+                  <input
+                    type="text"
+                    value={form.neighborhood || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, neighborhood: e.target.value })
+                    }
+                  />
+                </label>
+
                 <label>
                   Cidade
                   <input
-                    value={form.address.city}
-                    onChange={(e) => set("address.city", e.target.value)}
+                    type="text"
+                    value={form.city || ""}
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
                   />
                 </label>
 
                 <label>
                   Estado
                   <input
-                    value={form.address.state}
-                    onChange={(e) => set("address.state", e.target.value)}
+                    type="text"
+                    value={form.state || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, state: e.target.value })
+                    }
                   />
                 </label>
               </div>
