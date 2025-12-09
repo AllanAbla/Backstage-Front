@@ -41,9 +41,9 @@ export default function TheaterDetailsPage() {
       <p>CEP: {theater.address.postal_code}</p>
 
       <h3>Contato</h3>
-      <p>Site: {theater.contacts.website}</p>
-      <p>Instagram: {theater.contacts.instagram}</p>
-      <p>Telefone: {theater.contacts.phone}</p>
+      <p>Site: {theater.contacts?.website || "—"}</p>
+      <p>Instagram: {theater.contacts?.instagram || "—"}</p>
+      <p>Telefone: {theater.contacts?.phone || "—"}</p>
 
       <button
         style={{ marginTop: "30px" }}

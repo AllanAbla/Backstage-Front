@@ -1,0 +1,19 @@
+.page-bg-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.page-bg-wrapper .particles-container {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.page-bg-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+}

@@ -137,3 +137,20 @@
 .back-btn:hover {
   background: rgba(255,255,255,0.15);
 }
+
+.option-title {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+  font-size: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: white;
+}
+
+.option-subtitle {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 400;
+  font-size: 1rem;
+  opacity: 0.9;
+  color: rgb(179, 179, 179);
+}

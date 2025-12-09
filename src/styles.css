@@ -1,7 +1,7 @@
 /* ====== DARK THEME (global) ====== */
 :root{
   /* palette */
-  --bg: #0b0f12;            /* page background */
+  --bg: #070606;            /* page background */
   --panel: #12171c;         /* cards/nav */
   --panel-2: #171e25;       /* inputs */
   --text: #e8eef3;          /* main text */
@@ -24,7 +24,7 @@ body{
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans';
+  font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans',"Montserrat", sans-serif;
 }
 
 /* layout */
@@ -54,7 +54,7 @@ nav a.active{ color: var(--text); background: var(--panel); border:1px solid var
 .form{ display:grid; gap:12px; }
 .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
 .grid3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; }
-label{ display:grid; gap:6px; color: var(--muted); font-size: 13px; }
+label{ display:grid; gap:1px; color: var(--text); font-size: 13px; margin-bottom: 12px;}
 
 input, textarea, select{
   width: 100%;
@@ -75,7 +75,7 @@ input:focus, textarea:focus, select:focus{
 textarea{ resize: vertical; min-height: 92px; }
 
 fieldset{
-  border: 1px solid var(--border);
+  border: 1px solid var(--muted);
   border-radius: var(--radius-sm);
   padding: 12px;
 }

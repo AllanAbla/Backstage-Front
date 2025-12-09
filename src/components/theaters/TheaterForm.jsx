@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
-import {
-  createTheater,
-  getTheater,
-  updateTheater,
-} from "../../api/theaters";
+import { createTheater, getTheater, updateTheater } from "../../api/theaters";
 import { useNavigate, useParams } from "react-router-dom";
 import "./theaterForm.css";
+import toast from "react-hot-toast";
+import PageBackground from "../../components/PageBackground";
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -18,7 +16,7 @@ function fileToBase64(file) {
 
 export default function TheaterForm() {
   const navigate = useNavigate();
-  const { id } = useParams(); // <-- detecta modo edição
+  const { id } = useParams();
 
   const [form, setForm] = useState({
     name: "",
@@ -44,13 +42,20 @@ export default function TheaterForm() {
   // ---------------------------------------------------------
   useEffect(() => {
     async function load() {
-      if (!id) return; // modo criação
+      if (!id) return;
       try {
         const data = await getTheater(id);
-        setForm(data);
+        setForm({
+          ...data,
+          contacts: {
+            website: data.contacts?.website || "",
+            instagram: data.contacts?.instagram || "",
+            phone: data.contacts?.phone || "",
+          },
+        });
         setPreview(data.photo || null);
       } catch {
-        setMsg({ ok: false, text: "Erro ao carregar teatro" });
+        toast.error(err.message || "Erro ao cadastrar teatro");
       }
     }
     load();
@@ -90,7 +95,6 @@ export default function TheaterForm() {
       set("address.neighborhood", data.bairro || "");
       set("address.city", data.localidade || "");
       set("address.state", data.uf || "");
-
     } catch (err) {
       setMsg({ ok: false, text: "Erro ao consultar CEP" });
     }
@@ -126,23 +130,21 @@ export default function TheaterForm() {
       const payload = {
         ...form,
         location: { type: "Point", coordinates: [lng, lat] },
-        contacts:
-          Object.values(form.contacts).some((v) => v?.trim())
-            ? form.contacts
-            : null,
+        contacts: Object.values(form.contacts).some((v) => v?.trim())
+          ? form.contacts
+          : null,
       };
 
       if (id) {
         // MODO EDITAR
         await updateTheater(id, payload);
-        setMsg({ ok: true, text: "Teatro atualizado com sucesso!" });
+        toast.success("Teatro cadastrado com sucesso!");
         setTimeout(() => navigate(`/theaters/${id}`), 800);
       } else {
         // MODO CRIAR
         const newTheater = await createTheater(payload);
         navigate(`/theaters/${newTheater.id}`);
       }
-
     } catch (err) {
       setMsg({ ok: false, text: err.message });
     } finally {
@@ -152,14 +154,11 @@ export default function TheaterForm() {
 
   return (
     <div className="theater-form-page">
-
       <h2>{id ? "Editar Teatro" : "Novo Teatro"}</h2>
 
       <form className="theater-form" onSubmit={submit}>
-
         {/* FOTO + CAMPOS PRINCIPAIS */}
         <div className="photo-and-main">
-
           {/* FOTO */}
           <label className="photo-box">
             {preview ? (
@@ -177,7 +176,6 @@ export default function TheaterForm() {
 
           {/* CAMPOS PRINCIPAIS */}
           <div className="main-fields">
-            
             {/* Nome */}
             <label>
               Nome*
@@ -196,6 +194,7 @@ export default function TheaterForm() {
               <label>
                 CEP*
                 <input
+                  required
                   placeholder="00000-000"
                   value={form.address.postal_code}
                   maxLength={9}
@@ -221,7 +220,9 @@ export default function TheaterForm() {
                   Bairro
                   <input
                     value={form.address.neighborhood}
-                    onChange={(e) => set("address.neighborhood", e.target.value)}
+                    onChange={(e) =>
+                      set("address.neighborhood", e.target.value)
+                    }
                   />
                 </label>
               </div>

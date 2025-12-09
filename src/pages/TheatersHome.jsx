@@ -20,8 +20,8 @@ export default function TheatersHome() {
 
         <div className="side-content">
           <div className="icon">+</div>
-          <h2>novo</h2>
-          <p>criar um novo teatro</p>
+          <h2 className="option-title">NOVO</h2>
+          <p className="option-subtitle">Cadastrar um novo teatro</p>
         </div>
       </div>
 
@@ -39,8 +39,8 @@ export default function TheatersHome() {
 
         <div className="side-content">
           <div className="icon">✎</div>
-          <h2>editar</h2>
-          <p>selecionar e editar teatro</p>
+          <h2 className="option-title">EDITAR</h2>
+          <p className="option-subtitle">Listagem de teatros cadastrados</p>
         </div>
       </div>
 

@@ -1,8 +1,7 @@
 /* --- Página inteira do formulário --- */
 .theater-form-page {
-  width: 80%;
-  max-width: 1100px;
-  margin: 60px auto;
+  width: 70%;
+  margin: 25px auto;
   padding-bottom: 60px;
 }
 
@@ -17,7 +16,7 @@
 .theater-form {
   display: flex;
   flex-direction: column;
-  gap: 22px; /* espaçamento global ajustado */
+  gap: 22px;
 }
 
 /* =========================================
@@ -25,15 +24,14 @@
    ========================================= */
 .photo-and-main {
   display: grid;
-  grid-template-columns: 360px auto;
+  grid-template-columns: 420px auto;
   gap: 28px;
   align-items: start;
 }
 
-/* Foto fixa 240x240 */
 .photo-box {
-  width: 370px;
-  height: 370px;
+  width: 425px;
+  height: 425px;
   border: 2px dashed #C6282855;
   border-radius: 12px;
   display: flex;
@@ -59,9 +57,8 @@
   display: block;
 }
 
-/* Limita largura dos campos ao lado da foto */
 .main-fields {
-  max-width: 720px;
+  max-width: 890px;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -86,7 +83,6 @@
   outline: none;
 }
 
-/* Fieldsets mais equilibrados */
 fieldset {
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 10px;
@@ -94,14 +90,13 @@ fieldset {
   background: rgba(255,255,255,0.02);
 }
 
-/* Espaçamentos verticais corrigidos */
 fieldset:nth-of-type(1) {
-  margin-top: 8px; /* Nome -> Endereço */
+  margin-top: 1px;
 }
 
 fieldset:nth-of-type(2),
 fieldset:nth-of-type(3) {
-  margin-top: -6px; /* reduz buraco entre blocos */
+  margin-top: -6px;
 }
 
 legend {
@@ -140,6 +135,6 @@ legend {
 }
 
 .theater-form button:hover {
-  background: #66b8ff;
+  background: #E53935;
   transform: translateY(-2px);
 }

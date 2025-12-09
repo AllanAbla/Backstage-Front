@@ -93,7 +93,7 @@ function addMarker(map, point) {
   el.style.cssText = `
     width: 10px; height: 10px; border-radius: 50%;
     background: #C62828;
-    box-shadow: 0 0 0 3px rgba(74,168,255,.25);
+    box-shadow: 0 0 0 3px rgba(255, 74, 74, 0.25);
     border: 1px solid rgba(0,0,0,.2);
     cursor: pointer;
   `;
