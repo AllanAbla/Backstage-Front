@@ -3,7 +3,73 @@ import { createTheater, getTheater, updateTheater } from "../../api/theaters";
 import { useNavigate, useParams } from "react-router-dom";
 import "./theaterForm.css";
 import toast from "react-hot-toast";
-import PageBackground from "../../components/PageBackground";
+import Select from "react-select";
+import { components } from "react-select";
+import countries from "i18n-iso-countries";
+import ptLocale from "i18n-iso-countries/langs/pt.json";
+import { useMemo } from "react";
+
+const countrySelectStyles = {
+  control: (base, state) => ({
+    ...base,
+    backgroundColor: "transparent",
+    borderColor: "#ffffff33",
+    boxShadow: state.isFocused ? "0 0 0 1px #c72829" : "none",
+    minHeight: "40px",
+  }),
+  valueContainer: (base) => ({
+    ...base,
+    padding: "0 10px",
+  }),
+  input: (base) => ({
+    ...base,
+    color: "#fff",
+  }),
+  singleValue: (base) => ({
+    ...base,
+    color: "#fff",
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: "#ffffff80",
+  }),
+  indicatorsContainer: (base) => ({
+    ...base,
+    color: "#ffffffaa",
+  }),
+  dropdownIndicator: (base, state) => ({
+    ...base,
+    color: state.isFocused ? "#c72829" : "#ffffffaa",
+    ":hover": { color: "#c72829" },
+  }),
+  clearIndicator: (base) => ({
+    ...base,
+    color: "#ffffffaa",
+    ":hover": { color: "#c72829" },
+  }),
+  menu: (base) => ({
+    ...base,
+    backgroundColor: "#2b2b2b",
+    border: "1px solid #ffffff22",
+    zIndex: 9999,
+  }),
+  menuList: (base) => ({
+    ...base,
+    backgroundColor: "#e6e6e6",  
+    padding: 0,
+    maxHeight: 240,
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected
+      ? "#c72829"
+      : state.isFocused
+      ? "#c72829"               
+      : "transparent",
+    color: state.isSelected || state.isFocused ? "#fff" : "#111",
+    cursor: "pointer",
+  }),
+};
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -22,11 +88,12 @@ export default function TheaterForm() {
     name: "",
     address: {
       street: "",
+      number: "",
       neighborhood: "",
       city: "",
       state: "",
       postal_code: "",
-      country: "BR",
+      country: "",
     },
     location: { type: "Point", coordinates: ["", ""] },
     contacts: { website: "", instagram: "", phone: "" },
@@ -36,6 +103,161 @@ export default function TheaterForm() {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
+
+  // ---------------------------------------------------------
+  // FUNÇÕES DE ENDEREÇO
+  // ---------------------------------------------------------
+
+  countries.registerLocale(ptLocale);
+
+  const countryToFlag = (isoCode) => {
+    return isoCode
+      .toUpperCase()
+      .split("")
+      .map((char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
+      .join("");
+  };
+
+  const countryOptions = useMemo(() => {
+    const names = countries.getNames("pt", { select: "official" }); // { BR: "Brasil", ... }
+    return Object.entries(names)
+      .map(([code, name]) => ({
+        value: code,
+        name,
+        label: `${countryToFlag(code)} ${name}`,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, []);
+
+  const [zipEnabled, setZipEnabled] = useState(false);
+  const [addressLocked, setAddressLocked] = useState(true);
+  const [zipSearching, setZipSearching] = useState(false);
+  const [lastLookupKey, setLastLookupKey] = useState(null);
+
+  async function lookupByZip(country, postal) {
+    const cc = (country || "BR").toUpperCase();
+
+    if (cc === "BR") {
+      const cep = (postal || "").replace(/\D/g, "");
+      if (cep.length !== 8) return { found: false };
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+      if (data?.erro) return { found: false };
+      return {
+        found: true,
+        address: {
+          street: data.logradouro || "",
+          neighborhood: data.bairro || "",
+          city: data.localidade || "",
+          state: data.uf || "",
+          postal_code: data.cep || postal,
+          country: "BR",
+        },
+      };
+    }
+
+    const zip = (postal || "").trim().replace(" ", "");
+    if (zip.length < 3) return { found: false };
+
+    const res = await fetch(
+      `https://api.zippopotam.us/${cc.toLowerCase()}/${zip}`
+    );
+    if (!res.ok) return { found: false };
+    const data = await res.json();
+    const p = data?.places?.[0];
+    if (!p) return { found: false };
+
+    return {
+      found: true,
+      address: {
+        street: "",
+        neighborhood: "",
+        city: p["place name"] || "",
+        state: p["state abbreviation"] || p["state"] || "",
+        postal_code: data["post code"] || zip,
+        country: cc,
+      },
+    };
+  }
+
+  const onCountryChangeSelect = (opt) => {
+    const cc = opt?.value || ""; // se limpar, fica ""
+
+    set("address.country", cc);
+
+    // limpa e trava tudo ao trocar país
+    set("address.postal_code", "");
+    set("address.street", "");
+    set("address.number", "");
+    set("address.neighborhood", "");
+    set("address.city", "");
+    set("address.state", "");
+
+    setLastLookupKey(null);
+
+    setZipEnabled(!!cc); // só habilita zip se tiver país
+    setAddressLocked(true);
+  };
+
+  const onZipChange = (e) => {
+    set("address.postal_code", e.target.value);
+    setAddressLocked(true);
+  };
+
+  useEffect(() => {
+    const cc = (form.address.country || "").toUpperCase();
+    const zipRaw = form.address.postal_code || "";
+
+    // não faz nada sem país selecionado / zip habilitado
+    if (!zipEnabled || !cc) return;
+
+    // só dispara lookup quando o zip estiver "completo o suficiente"
+    if (cc === "BR") {
+      const cep = zipRaw.replace(/\D/g, "");
+      if (cep.length !== 8) return;
+    } else {
+      const zip = zipRaw.trim().replace(" ", "");
+      if (zip.length < 3) return;
+    }
+
+    const key = `${cc}:${zipRaw}`;
+    const t = setTimeout(async () => {
+      if (lastLookupKey === key) return;
+
+      setZipSearching(true);
+      try {
+        const r = await lookupByZip(cc, zipRaw);
+        setLastLookupKey(key);
+
+        if (r.found) {
+          set("address.street", r.address.street || "");
+          set("address.neighborhood", r.address.neighborhood || "");
+          set("address.city", r.address.city || "");
+          set("address.state", r.address.state || "");
+          set("address.postal_code", r.address.postal_code || zipRaw);
+          set("address.country", r.address.country || cc);
+
+          setAddressLocked(false);
+        } else {
+          setAddressLocked(false);
+          toast.error("erro ao pesquisar por zip-code");
+        }
+      } catch {
+        setLastLookupKey(key);
+        setAddressLocked(false);
+        toast.error("erro ao pesquisar por zip-code");
+      } finally {
+        setZipSearching(false);
+      }
+    }, 450);
+
+    return () => clearTimeout(t);
+  }, [
+    form.address.country,
+    form.address.postal_code,
+    zipEnabled,
+    lastLookupKey,
+  ]);
 
   // ---------------------------------------------------------
   // CARREGAR TEATRO NO MODO EDIÇÃO
@@ -96,7 +318,7 @@ export default function TheaterForm() {
       set("address.city", data.localidade || "");
       set("address.state", data.uf || "");
     } catch (err) {
-      setMsg({ ok: false, text: "Erro ao consultar CEP" });
+      toast.error(err.message || "Erro ao consultar CEP");
     }
   }
 
@@ -158,7 +380,9 @@ export default function TheaterForm() {
         <span className="tf-back" onClick={() => navigate(-1)}>
           ← voltar
         </span>
-        <h2 className="tf-title">{id ? "Editar Teatro" : "Cadastrar Novo Teatro"}</h2>
+        <h2 className="tf-title">
+          {id ? "Editar Teatro" : "Cadastrar Novo Teatro"}
+        </h2>
         <span></span> {/* só para equilibrar o layout */}
       </div>
 
@@ -196,32 +420,35 @@ export default function TheaterForm() {
             <fieldset>
               <legend>Endereço</legend>
 
-              {/* PRIMEIRA LINHA */}
               <div className="grid4">
                 <label>
                   País
-                  <select
-                    value={form.country || "BR"}
-                    onChange={(e) =>
-                      setForm({ ...form, country: e.target.value })
-                    }
-                  >
-                    <option value="BR">Brasil</option>
-                    <option value="US">EUA</option>
-                    <option value="PT">Portugal</option>
-                    <option value="AR">Argentina</option>
-                  </select>
-                </label>
+                <Select
+                  classNamePrefix="rs"
+                  options={countryOptions}
+                  value={
+                    countryOptions.find(
+                      (o) => o.value === form.address.country
+                    ) || null
+                  }
+                  onChange={onCountryChangeSelect}
+                  placeholder="Digite para pe"
+                  isClearable
+                  isSearchable
+                  noOptionsMessage={() => "Nenhum país encontrado"}
+                  styles={countrySelectStyles}
+                /></label>
 
                 <label>
                   Zip-Code*
                   <input
                     type="text"
-                    placeholder="00000-000"
-                    value={form.postal_code || ""}
-                    onChange={(e) =>
-                      setForm({ ...form, postal_code: e.target.value })
+                    placeholder={
+                      form.address.country === "BR" ? "00000-000" : "ZIP"
                     }
+                    value={form.address.postal_code || ""}
+                    onChange={onZipChange}
+                    disabled={!zipEnabled}
                   />
                 </label>
 
@@ -229,10 +456,9 @@ export default function TheaterForm() {
                   Endereço*
                   <input
                     type="text"
-                    value={form.street || ""}
-                    onChange={(e) =>
-                      setForm({ ...form, street: e.target.value })
-                    }
+                    value={form.address.street || ""}
+                    onChange={(e) => set("address.street", e.target.value)}
+                    disabled={addressLocked}
                   />
                 </label>
 
@@ -240,24 +466,23 @@ export default function TheaterForm() {
                   Número
                   <input
                     type="text"
-                    value={form.number || ""}
-                    onChange={(e) =>
-                      setForm({ ...form, number: e.target.value })
-                    }
+                    value={form.address.number || ""}
+                    onChange={(e) => set("address.number", e.target.value)}
+                    disabled={addressLocked}
                   />
                 </label>
               </div>
 
-              {/* SEGUNDA LINHA */}
               <div className="grid3">
                 <label>
                   Bairro
                   <input
                     type="text"
-                    value={form.neighborhood || ""}
+                    value={form.address.neighborhood || ""}
                     onChange={(e) =>
-                      setForm({ ...form, neighborhood: e.target.value })
+                      set("address.neighborhood", e.target.value)
                     }
+                    disabled={addressLocked}
                   />
                 </label>
 
@@ -265,8 +490,9 @@ export default function TheaterForm() {
                   Cidade
                   <input
                     type="text"
-                    value={form.city || ""}
-                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                    value={form.address.city || ""}
+                    onChange={(e) => set("address.city", e.target.value)}
+                    disabled={addressLocked}
                   />
                 </label>
 
@@ -274,13 +500,16 @@ export default function TheaterForm() {
                   Estado
                   <input
                     type="text"
-                    value={form.state || ""}
-                    onChange={(e) =>
-                      setForm({ ...form, state: e.target.value })
-                    }
+                    value={form.address.state || ""}
+                    onChange={(e) => set("address.state", e.target.value)}
+                    disabled={addressLocked}
                   />
                 </label>
               </div>
+
+              {zipSearching && (
+                <small style={{ opacity: 0.75 }}>Buscando endereço…</small>
+              )}
             </fieldset>
           </div>
         </div>

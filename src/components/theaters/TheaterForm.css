@@ -171,3 +171,28 @@ legend {
 .tf-back:hover {
   color: var(--danger);
 }
+
+/* Scrollbar (Chrome/Edge/Safari) - react-select */
+.rs__menu-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.rs__menu-list::-webkit-scrollbar-track {
+  background: #1e1e1e;          /* track escuro */
+}
+
+.rs__menu-list::-webkit-scrollbar-thumb {
+  background: #444;             /* thumb escuro */
+  border-radius: 8px;
+  border: 2px solid #1e1e1e;
+}
+
+.rs__menu-list::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Firefox */
+.rs__menu-list {
+  scrollbar-width: thin;
+  scrollbar-color: #444 #1e1e1e;
+}
