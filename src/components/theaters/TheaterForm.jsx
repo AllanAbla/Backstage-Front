@@ -391,11 +391,13 @@ export default function TheaterForm({ mode, showSessions = false }) {
       if (Number.isNaN(lng) || Number.isNaN(lat))
         throw new Error("Coordenadas inválidas");
 
+      const { slug, id: _id, ...rest } = form;
+
       const payload = {
-        ...form,
+        ...rest,
         location: { type: "Point", coordinates: [lng, lat] },
-        contacts: Object.values(form.contacts).some((v) => v?.trim())
-          ? form.contacts
+        contacts: Object.values(rest.contacts).some((v) => v?.trim())
+          ? rest.contacts
           : null,
       };
 
