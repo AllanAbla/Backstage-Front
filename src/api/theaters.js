@@ -10,10 +10,7 @@ export async function createTheater(payload) {
 
 export async function updateTheater(id, payload) {
   if (!id) throw new Error("updateTheater: id é obrigatório");
-  const { data } = await api.patch(`/theaters/${id}`, payload, {
-    headers: { "Content-Type": "application/json" },
-  });
-  return data;
+  return api.patch(`/theaters/${id}`, payload);
 }
 
 export async function getTheater(id) {

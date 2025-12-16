@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createTheater, getTheater, updateTheater } from "../../api/theaters";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import "./theaterForm.css";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -55,7 +55,7 @@ const countrySelectStyles = {
   }),
   menuList: (base) => ({
     ...base,
-    backgroundColor: "#e6e6e6",  
+    backgroundColor: "#e6e6e6",
     padding: 0,
     maxHeight: 240,
   }),
@@ -64,7 +64,7 @@ const countrySelectStyles = {
     backgroundColor: state.isSelected
       ? "#c72829"
       : state.isFocused
-      ? "#c72829"               
+      ? "#c72829"
       : "transparent",
     color: state.isSelected || state.isFocused ? "#fff" : "#111",
     cursor: "pointer",
@@ -80,9 +80,32 @@ function fileToBase64(file) {
   });
 }
 
-export default function TheaterForm() {
+export default function TheaterForm({ mode, showSessions = false }) {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
+
+  const [editOpen, setEditOpen] = useState(() => {
+    if (!id) return true;
+    if (mode === "edit") return true;
+    return false;
+  });
+
+  useEffect(() => {
+    skipInitialZipLookupRef.current = true;
+    if (!id) {
+      setEditOpen(true);
+      return;
+    }
+    setEditOpen(mode === "edit");
+  }, [id, mode, location.pathname]);
+
+  const readOnly = !!id && !editOpen;
+  const isCreate = !id;
+  const isEdit = !!id && editOpen;
+  const backTarget = isCreate ? "/theaters" : "/theaters/edit";
+
+  const skipInitialZipLookupRef = useRef(true);
 
   const [form, setForm] = useState({
     name: "",
@@ -97,7 +120,7 @@ export default function TheaterForm() {
     },
     location: { type: "Point", coordinates: ["", ""] },
     contacts: { website: "", instagram: "", phone: "" },
-    photo: null,
+    photo_base64: null,
   });
 
   const [preview, setPreview] = useState(null);
@@ -119,7 +142,7 @@ export default function TheaterForm() {
   };
 
   const countryOptions = useMemo(() => {
-    const names = countries.getNames("pt", { select: "official" }); // { BR: "Brasil", ... }
+    const names = countries.getNames("pt", { select: "official" });
     return Object.entries(names)
       .map(([code, name]) => ({
         value: code,
@@ -181,11 +204,16 @@ export default function TheaterForm() {
   }
 
   const onCountryChangeSelect = (opt) => {
-    const cc = opt?.value || ""; // se limpar, fica ""
-
+    const cc = opt?.value || "";
     set("address.country", cc);
 
-    // limpa e trava tudo ao trocar país
+    if (isEdit) {
+      setZipEnabled(true);
+      setAddressLocked(false);
+      setLastLookupKey(null);
+      return;
+    }
+
     set("address.postal_code", "");
     set("address.street", "");
     set("address.number", "");
@@ -194,24 +222,23 @@ export default function TheaterForm() {
     set("address.state", "");
 
     setLastLookupKey(null);
-
-    setZipEnabled(!!cc); // só habilita zip se tiver país
+    setZipEnabled(!!cc);
     setAddressLocked(true);
   };
 
   const onZipChange = (e) => {
     set("address.postal_code", e.target.value);
-    setAddressLocked(true);
+    if (!isEdit) setAddressLocked(true);
   };
 
   useEffect(() => {
     const cc = (form.address.country || "").toUpperCase();
     const zipRaw = form.address.postal_code || "";
 
-    // não faz nada sem país selecionado / zip habilitado
+    if (readOnly) return;
+
     if (!zipEnabled || !cc) return;
 
-    // só dispara lookup quando o zip estiver "completo o suficiente"
     if (cc === "BR") {
       const cep = zipRaw.replace(/\D/g, "");
       if (cep.length !== 8) return;
@@ -221,9 +248,16 @@ export default function TheaterForm() {
     }
 
     const key = `${cc}:${zipRaw}`;
-    const t = setTimeout(async () => {
-      if (lastLookupKey === key) return;
 
+    if (isEdit && skipInitialZipLookupRef.current) {
+      skipInitialZipLookupRef.current = false;
+      setLastLookupKey(key);
+      return;
+    }
+
+    if (lastLookupKey === key) return;
+
+    const t = setTimeout(async () => {
       setZipSearching(true);
       try {
         const r = await lookupByZip(cc, zipRaw);
@@ -236,12 +270,11 @@ export default function TheaterForm() {
           set("address.state", r.address.state || "");
           set("address.postal_code", r.address.postal_code || zipRaw);
           set("address.country", r.address.country || cc);
-
-          setAddressLocked(false);
         } else {
-          setAddressLocked(false);
           toast.error("erro ao pesquisar por zip-code");
         }
+
+        setAddressLocked(false);
       } catch {
         setLastLookupKey(key);
         setAddressLocked(false);
@@ -257,6 +290,7 @@ export default function TheaterForm() {
     form.address.postal_code,
     zipEnabled,
     lastLookupKey,
+    readOnly,
   ]);
 
   // ---------------------------------------------------------
@@ -267,6 +301,9 @@ export default function TheaterForm() {
       if (!id) return;
       try {
         const data = await getTheater(id);
+
+        skipInitialZipLookupRef.current = true;
+
         setForm({
           ...data,
           contacts: {
@@ -275,9 +312,14 @@ export default function TheaterForm() {
             phone: data.contacts?.phone || "",
           },
         });
-        setPreview(data.photo || null);
-      } catch {
-        toast.error(err.message || "Erro ao cadastrar teatro");
+
+        setPreview(data.photo_base64 || null);
+
+        setZipEnabled(true);
+        setAddressLocked(false);
+        setLastLookupKey(null);
+      } catch (err) {
+        toast.error(err.message || "Erro ao carregar teatro");
       }
     }
     load();
@@ -330,7 +372,7 @@ export default function TheaterForm() {
     if (!file) return;
 
     const base64 = await fileToBase64(file);
-    set("photo", base64);
+    set("photo_base64", base64);
     setPreview(base64);
   };
 
@@ -377,32 +419,79 @@ export default function TheaterForm() {
   return (
     <div className="theater-form-page">
       <div className="tf-header">
-        <span className="tf-back" onClick={() => navigate(-1)}>
-          ← voltar
-        </span>
+        {!id || readOnly ? (
+          <span className="tf-back" onClick={() => navigate(backTarget)}>
+            ← voltar
+          </span>
+        ) : (
+          <span />
+        )}
+
         <h2 className="tf-title">
-          {id ? "Editar Teatro" : "Cadastrar Novo Teatro"}
+          {id
+            ? readOnly
+              ? "Teatro"
+              : "Editar Teatro"
+            : "Cadastrar Novo Teatro"}
         </h2>
-        <span></span> {/* só para equilibrar o layout */}
+
+        {id ? (
+          readOnly ? (
+            <button
+              type="button"
+              className="tf-edit-btn"
+              onClick={() => {
+                skipInitialZipLookupRef.current = true;
+                setEditOpen(true);
+                navigate(`/theaters/${id}/edit`);
+              }}
+            >
+              Editar
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="tf-edit-btn"
+              onClick={() => {
+                setEditOpen(false);
+                navigate(`/theaters/${id}`);
+              }}
+            >
+              Cancelar
+            </button>
+          )
+        ) : (
+          <span />
+        )}
       </div>
 
       <form className="theater-form" onSubmit={submit}>
         {/* FOTO + CAMPOS PRINCIPAIS */}
         <div className="photo-and-main">
           {/* FOTO */}
-          <label className="photo-box">
-            {preview ? (
-              <img src={preview} alt="preview" className="photo-preview" />
-            ) : (
-              <span>Clique para enviar foto</span>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={handlePhotoChange}
-            />
-          </label>
+          {readOnly ? (
+            <div className="photo-box is-readonly">
+              {preview ? (
+                <img src={preview} alt="preview" className="photo-preview" />
+              ) : (
+                <span>Sem foto</span>
+              )}
+            </div>
+          ) : (
+            <label className="photo-box">
+              {preview ? (
+                <img src={preview} alt="preview" className="photo-preview" />
+              ) : (
+                <span>Clique para enviar foto</span>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handlePhotoChange}
+              />
+            </label>
+          )}
 
           {/* CAMPOS PRINCIPAIS */}
           <div className="main-fields">
@@ -413,6 +502,7 @@ export default function TheaterForm() {
                 required
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
+                disabled={readOnly}
               />
             </label>
 
@@ -423,21 +513,23 @@ export default function TheaterForm() {
               <div className="grid4">
                 <label>
                   País
-                <Select
-                  classNamePrefix="rs"
-                  options={countryOptions}
-                  value={
-                    countryOptions.find(
-                      (o) => o.value === form.address.country
-                    ) || null
-                  }
-                  onChange={onCountryChangeSelect}
-                  placeholder="Digite para pe"
-                  isClearable
-                  isSearchable
-                  noOptionsMessage={() => "Nenhum país encontrado"}
-                  styles={countrySelectStyles}
-                /></label>
+                  <Select
+                    classNamePrefix="rs"
+                    options={countryOptions}
+                    value={
+                      countryOptions.find(
+                        (o) => o.value === form.address.country
+                      ) || null
+                    }
+                    onChange={onCountryChangeSelect}
+                    isDisabled={readOnly}
+                    placeholder="Digite para pe"
+                    isClearable
+                    isSearchable
+                    noOptionsMessage={() => "Nenhum país encontrado"}
+                    styles={countrySelectStyles}
+                  />
+                </label>
 
                 <label>
                   Zip-Code*
@@ -448,7 +540,7 @@ export default function TheaterForm() {
                     }
                     value={form.address.postal_code || ""}
                     onChange={onZipChange}
-                    disabled={!zipEnabled}
+                    disabled={readOnly || (isCreate ? !zipEnabled : false)}
                   />
                 </label>
 
@@ -458,7 +550,7 @@ export default function TheaterForm() {
                     type="text"
                     value={form.address.street || ""}
                     onChange={(e) => set("address.street", e.target.value)}
-                    disabled={addressLocked}
+                    disabled={readOnly || (isCreate ? addressLocked : false)}
                   />
                 </label>
 
@@ -468,7 +560,7 @@ export default function TheaterForm() {
                     type="text"
                     value={form.address.number || ""}
                     onChange={(e) => set("address.number", e.target.value)}
-                    disabled={addressLocked}
+                    disabled={readOnly || (isCreate ? addressLocked : false)}
                   />
                 </label>
               </div>
@@ -482,7 +574,7 @@ export default function TheaterForm() {
                     onChange={(e) =>
                       set("address.neighborhood", e.target.value)
                     }
-                    disabled={addressLocked}
+                    disabled={readOnly || (isCreate ? addressLocked : false)}
                   />
                 </label>
 
@@ -492,7 +584,7 @@ export default function TheaterForm() {
                     type="text"
                     value={form.address.city || ""}
                     onChange={(e) => set("address.city", e.target.value)}
-                    disabled={addressLocked}
+                    disabled={readOnly || (isCreate ? addressLocked : false)}
                   />
                 </label>
 
@@ -502,7 +594,7 @@ export default function TheaterForm() {
                     type="text"
                     value={form.address.state || ""}
                     onChange={(e) => set("address.state", e.target.value)}
-                    disabled={addressLocked}
+                    disabled={readOnly || (isCreate ? addressLocked : false)}
                   />
                 </label>
               </div>
@@ -525,6 +617,7 @@ export default function TheaterForm() {
                 required
                 value={form.location.coordinates[0]}
                 onChange={(e) => set("location.coordinates.0", e.target.value)}
+                disabled={readOnly}
               />
             </label>
 
@@ -534,6 +627,7 @@ export default function TheaterForm() {
                 required
                 value={form.location.coordinates[1]}
                 onChange={(e) => set("location.coordinates.1", e.target.value)}
+                disabled={readOnly}
               />
             </label>
           </div>
@@ -549,6 +643,7 @@ export default function TheaterForm() {
               placeholder="https://..."
               value={form.contacts.website}
               onChange={(e) => set("contacts.website", e.target.value)}
+              disabled={readOnly}
             />
           </label>
 
@@ -558,6 +653,7 @@ export default function TheaterForm() {
               placeholder="@perfil"
               value={form.contacts.instagram}
               onChange={(e) => set("contacts.instagram", e.target.value)}
+              disabled={readOnly}
             />
           </label>
 
@@ -567,14 +663,17 @@ export default function TheaterForm() {
               placeholder="(11) 99999-9999"
               value={form.contacts.phone}
               onChange={(e) => set("contacts.phone", e.target.value)}
+              disabled={readOnly}
             />
           </label>
         </fieldset>
 
         {/* BOTÃO */}
-        <button disabled={loading}>
-          {loading ? "Salvando..." : id ? "Salvar alterações" : "Salvar"}
-        </button>
+        {!readOnly && (
+          <button disabled={loading}>
+            {loading ? "Salvando..." : id ? "Salvar alterações" : "Salvar"}
+          </button>
+        )}
 
         {msg && <p className={msg.ok ? "ok" : "err"}>{msg.text}</p>}
       </form>

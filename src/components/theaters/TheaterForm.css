@@ -196,3 +196,54 @@ legend {
   scrollbar-width: thin;
   scrollbar-color: #444 #1e1e1e;
 }
+.tf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tf-title {
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.tf-edit-btn {
+  width: auto;
+  min-width: 110px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid #ffffff33;
+  background: transparent;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.tf-edit-btn:hover {
+  border-color: #c72829;
+  background-color: #c72829;
+  color: #fff;
+}
+
+.tf-edit-btn:active {
+  transform: translateY(1px);
+}
+
+.photo-box {
+  border: 2px dashed #c72829;
+}
+
+.photo-box.is-readonly {
+  border-style: solid;
+  cursor: default;
+}
+
+.photo-box.is-readonly:hover {
+  transform: none;
+  filter: none;
+  box-shadow: none;
+}
