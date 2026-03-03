@@ -1,13 +1,19 @@
 import { api } from "./client";
 
-export async function createPerformance(payload) {
-  return api.post(`/performances`, payload);
-}
+export const listPerformances = (params = {}) => {
+  const qs = new URLSearchParams({ limit: 500, ...params }).toString();
+  return api.get(`/performances?${qs}`);
+};
 
-export async function listPerformances() {
-  return api.get(`/performances?limit=500`);
-}
+export const getPerformance = (id) =>
+  api.get(`/performances/${id}`);
 
-export async function updatePerformance(payload) {
-  return api.patch(`/performances/{id}`, payload);
-}
+export const createPerformance = (payload) =>
+  api.post("/performances", payload);
+
+// ⚠️ Corrigido: estava "/performances/{id}" (literal) no arquivo original
+export const updatePerformance = (id, payload) =>
+  api.patch(`/performances/${id}`, payload);
+
+export const deletePerformance = (id) =>
+  api.del(`/performances/${id}`);
