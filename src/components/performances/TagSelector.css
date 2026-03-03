@@ -1,0 +1,121 @@
+/* ═══════════════════════════════════════════
+   TagSelector.css
+   Prefixo "ts-" para escopo isolado.
+═══════════════════════════════════════════ */
+
+.ts-root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Chips ── */
+.ts-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ts-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 12px;
+  border-radius: 20px;
+  background: rgba(198, 40, 40, 0.18);
+  border: 1px solid rgba(198, 40, 40, 0.45);
+  color: #e57373;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ts-chip-remove {
+  background: none;
+  border: none;
+  color: #e57373;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+  /* reset global button styles */
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  font-weight: 400;
+}
+
+.ts-chip-remove:hover {
+  opacity: 1;
+  background: none;
+  transform: none;
+}
+
+/* ── Input ── */
+.ts-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ts-input {
+  flex: 1;
+  padding-right: 48px; /* espaço para o contador */
+}
+
+.ts-input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ts-counter {
+  position: absolute;
+  right: 12px;
+  font-size: 11px;
+  color: #9fb0bf;
+  pointer-events: none;
+  letter-spacing: 0.03em;
+  opacity: 0.7;
+}
+
+.ts-counter.ts-counter-limit {
+  color: #c62828;
+  opacity: 1;
+}
+
+/* ── Dropdown ── */
+.ts-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  background: #12171c;
+  border: 1px solid #25303a;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.ts-dropdown::-webkit-scrollbar { width: 4px; }
+.ts-dropdown::-webkit-scrollbar-track { background: transparent; }
+.ts-dropdown::-webkit-scrollbar-thumb { background: #25303a; border-radius: 4px; }
+
+.ts-option {
+  padding: 9px 14px;
+  font-size: 14px;
+  color: #e8eef3;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.ts-option:hover {
+  background: rgba(198, 40, 40, 0.15);
+  color: #fff;
+}

@@ -7,21 +7,6 @@ export default function PerformancesPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
-        <button
-          onClick={() => setTab("list")}
-          style={{ fontWeight: tab === "list" ? "bold" : "normal" }}
-        >
-          🎭 Listagem
-        </button>
-        <button
-          onClick={() => setTab("add")}
-          style={{ fontWeight: tab === "add" ? "bold" : "normal" }}
-        >
-          ➕ Nova performance
-        </button>
-      </div>
-
       {tab === "list" && (
         <PerformancesList onAddNew={() => setTab("add")} />
       )}

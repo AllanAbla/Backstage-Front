@@ -1,0 +1,316 @@
+/* ═══════════════════════════════════════════════════
+   PerformanceForm.css
+   Estilos escopados com prefixo "pf-" para não
+   conflitar com os estilos globais do projeto.
+═══════════════════════════════════════════════════ */
+
+.pf-page {
+  width: 90%;
+  max-width: 1100px;
+  margin: 32px auto;
+  padding-bottom: 60px;
+  color: #e8eef3;
+}
+
+/* ── Header ── */
+.pf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+}
+
+.pf-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.pf-step-label {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.45;
+  margin-left: 6px;
+}
+
+.pf-step-dots {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pf-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #25303a;
+  transition: background 0.2s;
+}
+
+.pf-dot.active {
+  background: #c62828;
+}
+
+/* ── Layout: banner | campos ── */
+.pf-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+/* ── Banner 2:3 ── */
+.pf-banner-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pf-banner-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  aspect-ratio: 2 / 3;
+  border: 1.5px dashed #c62828;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: background 0.2s;
+  gap: 10px;
+}
+
+.pf-banner-upload:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.pf-banner-upload img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: none;
+  border-radius: 0;
+}
+
+.pf-banner-icon {
+  font-size: 26px;
+  opacity: 0.5;
+}
+
+.pf-banner-label {
+  font-size: 11px;
+  color: #9fb0bf;
+  text-align: center;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  padding: 0 14px;
+}
+
+.pf-banner-hint {
+  margin-top: 8px;
+  font-size: 10px;
+  color: #25303a;
+  color: #9fb0bf;
+  opacity: 0.5;
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+/* ── Campos ── */
+.pf-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pf-label {
+  font-size: 11px;
+  color: #9fb0bf;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.pf-req {
+  color: #c62828;
+  margin-left: 2px;
+}
+
+.pf-input,
+.pf-select,
+.pf-textarea {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #25303a;
+  background: #12171c;
+  color: #e8eef3;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.pf-input::placeholder,
+.pf-textarea::placeholder {
+  color: #6b7c8c;
+}
+
+.pf-input:focus,
+.pf-select:focus,
+.pf-textarea:focus {
+  border-color: #c62828;
+}
+
+.pf-select { cursor: pointer; width: 100%; }
+
+.pf-textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+/* ── Linhas de campos ── */
+.pf-row {
+  display: grid;
+  gap: 12px;
+}
+
+/* Nome | Classificação | Temporada */
+.pf-row-compact {
+  grid-template-columns: 1fr 140px 100px;
+}
+
+/* Tags | Dramaturgia | Direção */
+.pf-row-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+/* ── Ações ── */
+.pf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.pf-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #25303a;
+}
+
+.pf-btn-primary {
+  height: 42px;
+  padding: 0 24px;
+  border-radius: 8px;
+  border: none;
+  background: #c62828;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.pf-btn-primary:hover:not(:disabled) {
+  background: #e53935;
+  transform: translateY(-1px);
+}
+
+.pf-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pf-btn-secondary {
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 8px;
+  border: 1px solid #25303a;
+  background: transparent;
+  color: #9fb0bf;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.pf-btn-secondary:hover {
+  border-color: #9fb0bf;
+  color: #e8eef3;
+}
+
+/* ── CrewEditor dentro do formulário ── */
+.pf-fields fieldset {
+  border: 1px solid #25303a;
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.02);
+}
+
+.pf-fields fieldset legend {
+  font-size: 11px;
+  color: #9fb0bf;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0 6px;
+}
+
+.pf-fields .grid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+
+.pf-fields .row-end {
+  display: flex;
+  align-items: flex-end;
+}
+
+/* ── Responsivo ── */
+@media (max-width: 768px) {
+  .pf-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pf-banner-col {
+    flex-direction: row;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .pf-banner-upload {
+    width: 120px;
+    flex-shrink: 0;
+  }
+
+  .pf-row-compact {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pf-row-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .pf-row-compact,
+  .pf-row-3 {
+    grid-template-columns: 1fr;
+  }
+}

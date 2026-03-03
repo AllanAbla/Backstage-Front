@@ -6,6 +6,13 @@
  *   - Metadados da performance
  *   - Sessões agrupadas por teatro (via GET /sessions/by-performance/:id)
  *   - Ações: Editar, Excluir performance, Adicionar sessões, Remover sessão
+ *
+ * Filtros disponíveis:
+ *   - Busca textual (nome, sinopse, tag, teatro)
+ *   - Temporada
+ *   - Classificação
+ *   - País   ← novo
+ *   - Cidade ← novo (cascata a partir do país selecionado)
  */
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
@@ -25,11 +32,14 @@ function fmtDate(iso) {
     weekday: "short", day: "2-digit", month: "short", year: "numeric",
   });
 }
+
 function fmtTime(iso) {
-  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("pt-BR", {
+    hour: "2-digit", minute: "2-digit",
+  });
 }
 
-// Agrupa sessões por theater_id → { [theater_id]: [session, ...] }
+/** Agrupa sessões por theater_id → { [theater_id]: [session, ...] } */
 function groupByTheater(sessions) {
   return sessions.reduce((acc, s) => {
     const k = s.theater_id;
@@ -39,26 +49,58 @@ function groupByTheater(sessions) {
   }, {});
 }
 
+/**
+ * Deriva opções de país e cidade a partir dos teatros,
+ * filtrando cidades pelo país selecionado (cascata).
+ * O(n) — passagem única.
+ *
+ * @param {Object} theatersMap   - { [id]: { name, city, country } }
+ * @param {string} filterCountry - código/nome do país selecionado ou ""
+ * @returns {{ countries: string[], cities: string[] }}
+ */
+function deriveGeoOptions(theatersMap, filterCountry) {
+  const countriesSet = new Set();
+  const citiesSet = new Set();
+
+  for (const t of Object.values(theatersMap)) {
+    if (t.country) countriesSet.add(t.country);
+    if (t.city && (!filterCountry || t.country === filterCountry)) {
+      citiesSet.add(t.city);
+    }
+  }
+
+  return {
+    countries: Array.from(countriesSet).sort(),
+    cities: Array.from(citiesSet).sort(),
+  };
+}
+
 // ── componente principal ──────────────────────────────────────────────────────
 
 export default function PerformancesList({ onAddNew }) {
   const navigate = useNavigate();
 
-  const [performances, setPerformances] = useState([]);
-  const [theatersMap, setTheatersMap]   = useState({}); // { [id]: name }
-  const [loading, setLoading]           = useState(true);
+  const [performances, setPerformances]   = useState([]);
+  /**
+   * theatersMap: { [id]: { name, city, country } }
+   * Armazena nome + localização para permitir filtros geo e exibição no card.
+   */
+  const [theatersMap, setTheatersMap]     = useState({});
+  const [loading, setLoading]             = useState(true);
 
   // filtros
-  const [q, setQ]                             = useState("");
-  const [filterSeason, setFilterSeason]       = useState("");
-  const [filterClass, setFilterClass]         = useState("");
+  const [q, setQ]                                   = useState("");
+  const [filterSeason, setFilterSeason]             = useState("");
+  const [filterClass, setFilterClass]               = useState("");
+  const [filterCountry, setFilterCountry]           = useState("");
+  const [filterCity, setFilterCity]                 = useState("");
 
   // drawer
-  const [selected, setSelected]               = useState(null);  // performance
-  const [sessions, setSessions]               = useState([]);
-  const [sessionsLoading, setSessionsLoading] = useState(false);
-  const [addingSession, setAddingSession]     = useState(false); // exibe SessionsWizard no drawer
-  const [confirmDel, setConfirmDel]           = useState(false);
+  const [selected, setSelected]                     = useState(null);
+  const [sessions, setSessions]                     = useState([]);
+  const [sessionsLoading, setSessionsLoading]       = useState(false);
+  const [addingSession, setAddingSession]           = useState(false);
+  const [confirmDel, setConfirmDel]                 = useState(false);
 
   // ── carga inicial ─────────────────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -69,8 +111,16 @@ export default function PerformancesList({ onAddNew }) {
         listTheaters(),
       ]);
       setPerformances(perfs);
+
+      // Mapa enriquecido: id → { name, city, country }
       const map = {};
-      theaters.forEach((t) => { map[t.id] = t.name; });
+      theaters.forEach((t) => {
+        map[t.id] = {
+          name:    t.name,
+          city:    t.address?.city    || "",
+          country: t.address?.country || "",
+        };
+      });
       setTheatersMap(map);
     } catch (err) {
       console.error(err);
@@ -81,24 +131,59 @@ export default function PerformancesList({ onAddNew }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // ── opções de geo (derivadas do mapa de teatros) ──────────────────────────
+  const { countries, cities } = useMemo(
+    () => deriveGeoOptions(theatersMap, filterCountry),
+    [theatersMap, filterCountry]
+  );
+
+  // Reseta cidade quando o país muda para evitar seleção órfã
+  const handleCountryChange = (val) => {
+    setFilterCountry(val);
+    setFilterCity("");
+  };
+
   // ── filtro client-side ────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     const term = q.toLowerCase();
+
     return performances.filter((p) => {
+      // Busca textual — inclui nome do teatro quando disponível via session_theaters
+      const theaterNames = (p.session_theaters || [])
+        .map((id) => (theatersMap[id]?.name || "").toLowerCase());
+
       const matchQ = !term ||
         p.name.toLowerCase().includes(term) ||
         (p.synopsis || "").toLowerCase().includes(term) ||
-        (p.tags || []).some((t) => t.toLowerCase().includes(term));
-      const matchS = !filterSeason || String(p.season) === filterSeason;
-      const matchC = !filterClass || p.classification === filterClass;
-      return matchQ && matchS && matchC;
+        (p.tags || []).some((t) => t.toLowerCase().includes(term)) ||
+        theaterNames.some((n) => n.includes(term));
+
+      const matchSeason  = !filterSeason  || String(p.season) === filterSeason;
+      const matchClass   = !filterClass   || p.classification === filterClass;
+
+      // Filtros geo: a performance está em cartaz nesse país/cidade?
+      const matchCountry = !filterCountry || (p.session_theaters || []).some(
+        (id) => theatersMap[id]?.country === filterCountry
+      );
+      const matchCity    = !filterCity    || (p.session_theaters || []).some(
+        (id) => theatersMap[id]?.city === filterCity
+      );
+
+      return matchQ && matchSeason && matchClass && matchCountry && matchCity;
     });
-  }, [performances, q, filterSeason, filterClass]);
+  }, [performances, q, filterSeason, filterClass, filterCountry, filterCity, theatersMap]);
 
   const seasons = useMemo(() => {
     const s = new Set(performances.map((p) => String(p.season)));
     return Array.from(s).sort((a, b) => b - a);
   }, [performances]);
+
+  const hasFilters = q || filterSeason || filterClass || filterCountry || filterCity;
+
+  const clearFilters = () => {
+    setQ(""); setFilterSeason(""); setFilterClass("");
+    setFilterCountry(""); setFilterCity("");
+  };
 
   // ── abrir drawer ──────────────────────────────────────────────────────────
   const openDrawer = useCallback(async (perf) => {
@@ -110,6 +195,17 @@ export default function PerformancesList({ onAddNew }) {
       const perfId = perf.id ?? perf._id;
       const data = await listByPerformance(perfId);
       setSessions(data);
+
+      // Enriquece a performance com os IDs únicos de teatros onde tem sessões
+      // para uso nos filtros geo (sem re-render desnecessário do array principal)
+      const theaterIds = [...new Set(data.map((s) => s.theater_id))];
+      setPerformances((prev) =>
+        prev.map((p) =>
+          (p.id ?? p._id) === perfId
+            ? { ...p, session_theaters: theaterIds }
+            : p
+        )
+      );
     } catch (err) {
       console.error(err);
       setSessions([]);
@@ -140,7 +236,7 @@ export default function PerformancesList({ onAddNew }) {
     if (!selected) return;
     const perfId = selected.id ?? selected._id;
     try {
-      await deleteByPerformance(perfId);  // remove sessões primeiro
+      await deleteByPerformance(perfId);
       await deletePerformance(perfId);
       setPerformances((prev) => prev.filter((p) => (p.id ?? p._id) !== perfId));
       closeDrawer();
@@ -167,6 +263,18 @@ export default function PerformancesList({ onAddNew }) {
   // ── render ────────────────────────────────────────────────────────────────
   const grouped = useMemo(() => groupByTheater(sessions), [sessions]);
 
+  /**
+   * Retorna o nome do teatro principal de uma performance.
+   * "Principal" = primeiro teatro com sessões (ordenado pelo id numérico).
+   * Exibido no card abaixo do título.
+   */
+  const primaryTheaterName = (perf) => {
+    const ids = perf.session_theaters;
+    if (!ids?.length) return null;
+    const sorted = [...ids].sort((a, b) => Number(a) - Number(b));
+    return theatersMap[sorted[0]]?.name || null;
+  };
+
   return (
     <div className="perf-list-page">
 
@@ -180,10 +288,10 @@ export default function PerformancesList({ onAddNew }) {
         )}
       </div>
 
-      {/* Filtros */}
+      {/* Filtros — linha 1: busca | temporada | classificação */}
       <div className="perf-filters">
         <input
-          placeholder="Buscar por nome, sinopse ou tag…"
+          placeholder="Buscar por nome, teatro, sinopse ou tag…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -195,9 +303,29 @@ export default function PerformancesList({ onAddNew }) {
           <option value="">Todas as classificações</option>
           {CLASSIFICATIONS.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
-        {(q || filterSeason || filterClass) && (
-          <button className="perf-filters-clear"
-            onClick={() => { setQ(""); setFilterSeason(""); setFilterClass(""); }}>
+      </div>
+
+      {/* Filtros — linha 2: país | cidade | limpar */}
+      <div className="perf-filters perf-filters-geo">
+        <select
+          value={filterCountry}
+          onChange={(e) => handleCountryChange(e.target.value)}
+        >
+          <option value="">Todos os países</option>
+          {countries.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+
+        <select
+          value={filterCity}
+          onChange={(e) => setFilterCity(e.target.value)}
+          disabled={!filterCountry}
+        >
+          <option value="">Todas as cidades</option>
+          {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+
+        {hasFilters && (
+          <button className="perf-filters-clear" onClick={clearFilters}>
             Limpar
           </button>
         )}
@@ -215,8 +343,10 @@ export default function PerformancesList({ onAddNew }) {
             </div>
           ) : (
             filtered.map((p) => {
-              const perfId = p.id ?? p._id;
+              const perfId   = p.id ?? p._id;
               const isActive = selected && (selected.id ?? selected._id) === perfId;
+              const theater  = primaryTheaterName(p);
+
               return (
                 <div
                   key={perfId}
@@ -231,11 +361,18 @@ export default function PerformancesList({ onAddNew }) {
                   </div>
                   <div className="perf-card-body">
                     <p className="perf-card-name">{p.name}</p>
+
+                    {/* Nome do teatro — novo */}
+                    {theater && (
+                      <p className="perf-card-theater">{theater}</p>
+                    )}
+
                     <div className="perf-card-meta">
                       <span>{p.season}</span>
                       <span>·</span>
                       <span>{p.classification}</span>
                     </div>
+
                     {p.tags?.length > 0 && (
                       <div className="perf-card-tags">
                         {p.tags.slice(0, 3).map((t) => (
@@ -246,6 +383,7 @@ export default function PerformancesList({ onAddNew }) {
                         )}
                       </div>
                     )}
+
                     {p.session_count > 0 && (
                       <p className="perf-session-count">
                         {p.session_count} sessão(ões)
@@ -265,7 +403,6 @@ export default function PerformancesList({ onAddNew }) {
           <div className="perf-drawer-overlay" onClick={closeDrawer} />
           <aside className="perf-drawer">
 
-            {/* Cabeçalho do drawer */}
             <div className="perf-drawer-head">
               <button className="perf-drawer-close" onClick={closeDrawer}>✕</button>
               <h2 className="perf-drawer-title">{selected.name}</h2>
@@ -275,7 +412,6 @@ export default function PerformancesList({ onAddNew }) {
               </p>
             </div>
 
-            {/* Ações */}
             {!addingSession && (
               <div className="perf-drawer-actions">
                 <button onClick={() => navigate(`/performances/${selected.id ?? selected._id}/edit`)}>
@@ -293,7 +429,6 @@ export default function PerformancesList({ onAddNew }) {
               </div>
             )}
 
-            {/* Corpo: sessões ou wizard */}
             <div className="perf-drawer-sessions">
               {addingSession ? (
                 <>
@@ -320,7 +455,7 @@ export default function PerformancesList({ onAddNew }) {
                       .map(([theaterId, tSessions]) => (
                         <div key={theaterId} className="perf-theater-group">
                           <p className="perf-theater-group-name">
-                            {theatersMap[theaterId] ?? `Teatro #${theaterId}`}
+                            {theatersMap[theaterId]?.name ?? `Teatro #${theaterId}`}
                           </p>
                           {tSessions
                             .slice()
