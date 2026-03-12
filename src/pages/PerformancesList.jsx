@@ -11,13 +11,13 @@
  *   - Busca textual (nome, sinopse, tag, teatro)
  *   - Temporada
  *   - Classificação
- *   - País   ← novo
- *   - Cidade ← novo (cascata a partir do país selecionado)
+ *   - País
+ *   - Cidade (cascata a partir do país selecionado)
  */
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { listPerformances, deletePerformance } from "../api/performances";
-import { listByPerformance, deleteSession, deleteByPerformance } from "../api/sessions";
+import { listByPerformance, deleteSession, deleteByPerformance, listAllSessions } from "../api/sessions";
 import { listTheaters } from "../api/theaters";
 import { imageUrl } from "../api/media";
 import SessionsWizard from "../components/performances/SessionsWizard";
@@ -75,53 +75,103 @@ function deriveGeoOptions(theatersMap, filterCountry) {
   };
 }
 
+/**
+ * Mapa de cores por classificação indicativa brasileira.
+ * Usado pelo componente ClassBadge.
+ */
+const CLASSIFICATION_COLORS = {
+  "Livre": { bg: "rgba(76,175,80,0.2)",  border: "rgba(76,175,80,0.5)",  color: "#81c784" },
+  "10":    { bg: "rgba(33,150,243,0.2)", border: "rgba(33,150,243,0.5)", color: "#64b5f6" },
+  "12":    { bg: "rgba(255,235,59,0.2)", border: "rgba(255,235,59,0.5)", color: "#fff176" },
+  "14":    { bg: "rgba(255,152,0,0.2)",  border: "rgba(255,152,0,0.5)",  color: "#ffb74d" },
+  "16":    { bg: "rgba(244,67,54,0.2)",  border: "rgba(244,67,54,0.5)",  color: "#e57373" },
+  "18":    { bg: "rgba(0,0,0,0.35)",     border: "rgba(255,255,255,0.3)", color: "#e0e0e0" },
+};
+
+/**
+ * Badge colorido de classificação indicativa.
+ * Exibe "L" para Livre e o número para as demais.
+ *
+ * @param {{ value: string }} props
+ */
+function ClassBadge({ value }) {
+  const c = CLASSIFICATION_COLORS[value] ?? CLASSIFICATION_COLORS["Livre"];
+  return (
+    <span
+      className="perf-class-badge"
+      style={{ background: c.bg, borderColor: c.border, color: c.color }}
+    >
+      {value === "Livre" ? "L" : value}
+    </span>
+  );
+}
+
 // ── componente principal ──────────────────────────────────────────────────────
 
 export default function PerformancesList({ onAddNew }) {
   const navigate = useNavigate();
 
-  const [performances, setPerformances]   = useState([]);
+  const [performances, setPerformances] = useState([]);
   /**
    * theatersMap: { [id]: { name, city, country } }
-   * Armazena nome + localização para permitir filtros geo e exibição no card.
+   * Chaves sempre em string para evitar mismatch int vs str entre
+   * o backend SQL (teatros) e o MongoDB (sessões).
    */
-  const [theatersMap, setTheatersMap]     = useState({});
-  const [loading, setLoading]             = useState(true);
+  const [theatersMap, setTheatersMap] = useState({});
+  const [loading, setLoading]         = useState(true);
 
   // filtros
-  const [q, setQ]                                   = useState("");
-  const [filterSeason, setFilterSeason]             = useState("");
-  const [filterClass, setFilterClass]               = useState("");
-  const [filterCountry, setFilterCountry]           = useState("");
-  const [filterCity, setFilterCity]                 = useState("");
+  const [q, setQ]                         = useState("");
+  const [filterSeason, setFilterSeason]   = useState("");
+  const [filterClass, setFilterClass]     = useState("");
+  const [filterCountry, setFilterCountry] = useState("");
+  const [filterCity, setFilterCity]       = useState("");
 
   // drawer
-  const [selected, setSelected]                     = useState(null);
-  const [sessions, setSessions]                     = useState([]);
-  const [sessionsLoading, setSessionsLoading]       = useState(false);
-  const [addingSession, setAddingSession]           = useState(false);
-  const [confirmDel, setConfirmDel]                 = useState(false);
+  const [selected, setSelected]           = useState(null);
+  const [sessions, setSessions]           = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [addingSession, setAddingSession] = useState(false);
+  const [confirmDel, setConfirmDel]       = useState(false);
 
   // ── carga inicial ─────────────────────────────────────────────────────────
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [perfs, theaters] = await Promise.all([
+      const [perfs, theaters, allSessions] = await Promise.all([
         listPerformances(),
         listTheaters(),
+        listAllSessions(),
       ]);
-      setPerformances(perfs);
 
-      // Mapa enriquecido: id → { name, city, country }
+      // Mapa performance_id → Set<theater_id> — O(n sessões), passagem única
+      const sessionTheatersMap = {};
+      for (const s of allSessions) {
+        if (!sessionTheatersMap[s.performance_id]) {
+          sessionTheatersMap[s.performance_id] = new Set();
+        }
+        sessionTheatersMap[s.performance_id].add(String(s.theater_id));
+      }
+
+      // Injeta session_theaters em cada performance antes de setar o estado
+      const perfsEnriched = perfs.map((p) => ({
+        ...p,
+        session_theaters: Array.from(sessionTheatersMap[p.id ?? p._id] ?? []),
+      }));
+
+      setPerformances(perfsEnriched);
+
+      // Mapa enriquecido: id (string) → { name, city, country }
       const map = {};
       theaters.forEach((t) => {
-        map[t.id] = {
+        map[String(t.id)] = {
           name:    t.name,
           city:    t.address?.city    || "",
           country: t.address?.country || "",
         };
       });
       setTheatersMap(map);
+
     } catch (err) {
       console.error(err);
     } finally {
@@ -148,9 +198,9 @@ export default function PerformancesList({ onAddNew }) {
     const term = q.toLowerCase();
 
     return performances.filter((p) => {
-      // Busca textual — inclui nome do teatro quando disponível via session_theaters
+      // Busca textual — inclui nome do teatro via session_theaters
       const theaterNames = (p.session_theaters || [])
-        .map((id) => (theatersMap[id]?.name || "").toLowerCase());
+        .map((id) => (theatersMap[String(id)]?.name || "").toLowerCase());
 
       const matchQ = !term ||
         p.name.toLowerCase().includes(term) ||
@@ -158,15 +208,15 @@ export default function PerformancesList({ onAddNew }) {
         (p.tags || []).some((t) => t.toLowerCase().includes(term)) ||
         theaterNames.some((n) => n.includes(term));
 
-      const matchSeason  = !filterSeason  || String(p.season) === filterSeason;
-      const matchClass   = !filterClass   || p.classification === filterClass;
+      const matchSeason  = !filterSeason || String(p.season) === filterSeason;
+      const matchClass   = !filterClass  || p.classification === filterClass;
 
       // Filtros geo: a performance está em cartaz nesse país/cidade?
       const matchCountry = !filterCountry || (p.session_theaters || []).some(
-        (id) => theatersMap[id]?.country === filterCountry
+        (id) => theatersMap[String(id)]?.country === filterCountry
       );
-      const matchCity    = !filterCity    || (p.session_theaters || []).some(
-        (id) => theatersMap[id]?.city === filterCity
+      const matchCity = !filterCity || (p.session_theaters || []).some(
+        (id) => theatersMap[String(id)]?.city === filterCity
       );
 
       return matchQ && matchSeason && matchClass && matchCountry && matchCity;
@@ -196,9 +246,8 @@ export default function PerformancesList({ onAddNew }) {
       const data = await listByPerformance(perfId);
       setSessions(data);
 
-      // Enriquece a performance com os IDs únicos de teatros onde tem sessões
-      // para uso nos filtros geo (sem re-render desnecessário do array principal)
-      const theaterIds = [...new Set(data.map((s) => s.theater_id))];
+      // Atualiza session_theaters da performance aberta no array principal
+      const theaterIds = [...new Set(data.map((s) => String(s.theater_id)))];
       setPerformances((prev) =>
         prev.map((p) =>
           (p.id ?? p._id) === perfId
@@ -265,14 +314,17 @@ export default function PerformancesList({ onAddNew }) {
 
   /**
    * Retorna o nome do teatro principal de uma performance.
-   * "Principal" = primeiro teatro com sessões (ordenado pelo id numérico).
-   * Exibido no card abaixo do título.
+   * Caminho 1: session_theaters (populado na carga inicial via listAllSessions).
+   * Caminho 2: ticket_links[0].theater_name (fallback para registros antigos).
    */
   const primaryTheaterName = (perf) => {
     const ids = perf.session_theaters;
-    if (!ids?.length) return null;
-    const sorted = [...ids].sort((a, b) => Number(a) - Number(b));
-    return theatersMap[sorted[0]]?.name || null;
+    if (ids?.length) {
+      const sorted = [...ids].sort((a, b) => Number(a) - Number(b));
+      const nameFromMap = theatersMap[String(sorted[0])]?.name;
+      if (nameFromMap) return nameFromMap;
+    }
+    return perf.ticket_links?.[0]?.theater_name || null;
   };
 
   return (
@@ -362,15 +414,20 @@ export default function PerformancesList({ onAddNew }) {
                   <div className="perf-card-body">
                     <p className="perf-card-name">{p.name}</p>
 
-                    {/* Nome do teatro — novo */}
                     {theater && (
                       <p className="perf-card-theater">{theater}</p>
                     )}
 
                     <div className="perf-card-meta">
-                      <span>{p.season}</span>
+                      <ClassBadge value={p.classification} />
+                      {p.duration_minutes && (
+                        <>
+                          <span>·</span>
+                          <span>{p.duration_minutes}min</span>
+                        </>
+                      )}
                       <span>·</span>
-                      <span>{p.classification}</span>
+                      <span>{p.season}</span>
                     </div>
 
                     {p.tags?.length > 0 && (
@@ -407,7 +464,9 @@ export default function PerformancesList({ onAddNew }) {
               <button className="perf-drawer-close" onClick={closeDrawer}>✕</button>
               <h2 className="perf-drawer-title">{selected.name}</h2>
               <p className="perf-drawer-sub">
-                {selected.season} · {selected.classification}
+                <ClassBadge value={selected.classification} />
+                {selected.duration_minutes && ` · ${selected.duration_minutes}min`}
+                {` · ${selected.season}`}
                 {selected.tags?.length > 0 && ` · ${selected.tags.slice(0, 3).join(", ")}`}
               </p>
             </div>
@@ -455,7 +514,7 @@ export default function PerformancesList({ onAddNew }) {
                       .map(([theaterId, tSessions]) => (
                         <div key={theaterId} className="perf-theater-group">
                           <p className="perf-theater-group-name">
-                            {theatersMap[theaterId]?.name ?? `Teatro #${theaterId}`}
+                            {theatersMap[String(theaterId)]?.name ?? `Teatro #${theaterId}`}
                           </p>
                           {tSessions
                             .slice()

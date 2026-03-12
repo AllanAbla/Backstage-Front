@@ -29,3 +29,7 @@ export const deleteSession = (sessionId) =>
 /** Remove todas as sessões de uma performance. */
 export const deleteByPerformance = (performanceId) =>
   api.del(`/sessions/by-performance/${performanceId}`);
+
+/** Lista todas as sessões (para popular session_theaters no grid). */
+export const listAllSessions = (limit = 2000) =>
+  api.get(`/sessions?limit=${limit}`);
