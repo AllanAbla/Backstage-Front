@@ -8,12 +8,14 @@
  * Layout etapa 1: banner 2:3 à esquerda | campos à direita
  * (espelha o padrão visual do TheaterForm)
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createPerformance } from "../../api/performances";
+import { listTheaters } from "../../api/theaters";
 import { uploadImage, imageUrl } from "../../api/media";
 import CrewEditor from "./CrewEditor";
 import SessionsWizard from "./SessionsWizard";
 import TagSelector from "./TagSelector";
+import TicketLinksEditor from "./TicketLinksEditor";
 import "./PerformanceForm.css";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -28,10 +30,12 @@ const EMPTY_FORM = {
   tags: [],
   classification: "Livre",
   season: new Date().getFullYear(),
+  duration_minutes: "",
   dramaturgyCsv: "",
   directionCsv: "",
   castCsv: "",
   crew: [],
+  ticket_links: [],
 };
 
 // ── componente ────────────────────────────────────────────────────────────────
@@ -43,6 +47,15 @@ export default function PerformanceForm({ onSaved, onCancel } = {}) {
   const [loading, setLoading]         = useState(false);
   const [msg, setMsg]                 = useState(null);
   const [createdPerf, setCreatedPerf] = useState(null);
+  const [theatersMap, setTheatersMap] = useState({});
+
+  // Carrega teatros para o TicketLinksEditor — O(1) requisição, resultado cacheado no estado
+  useEffect(() => {
+    listTheaters().then((list) => {
+      const map = Object.fromEntries((list ?? []).map((t) => [String(t.id), t]));
+      setTheatersMap(map);
+    }).catch(() => {});
+  }, []);
 
   const set = (key, v) => setForm((f) => ({ ...f, [key]: v }));
 
@@ -69,15 +82,17 @@ export default function PerformanceForm({ onSaved, onCancel } = {}) {
       }
 
       const payload = {
-        name:           form.name,
-        synopsis:       form.synopsis,
-        tags:           form.tags,
-        classification: form.classification,
-        season:         parseInt(form.season, 10),
-        dramaturgy:     csvToList(form.dramaturgyCsv),
-        direction:      csvToList(form.directionCsv),
-        cast:           csvToList(form.castCsv),
-        crew:           form.crew,
+        name:             form.name,
+        synopsis:         form.synopsis,
+        tags:             form.tags,
+        classification:   form.classification,
+        season:           parseInt(form.season, 10),
+        duration_minutes: form.duration_minutes ? parseInt(form.duration_minutes, 10) : null,
+        dramaturgy:       csvToList(form.dramaturgyCsv),
+        direction:        csvToList(form.directionCsv),
+        cast:             csvToList(form.castCsv),
+        crew:             form.crew,
+        ticket_links:     form.ticket_links,
         banner_url,
       };
 
@@ -92,13 +107,31 @@ export default function PerformanceForm({ onSaved, onCancel } = {}) {
   };
 
   // ── Etapa 2: sessões ──────────────────────────────────────────────────────
-  const onSessionsDone = () => {
+
+  /**
+   * Persiste os ticket_links via PATCH antes de encerrar o fluxo.
+   * Falha silenciosa intencional: sessões já foram criadas, o link pode
+   * ser adicionado/editado depois em PerformanceEdit.
+   */
+  const saveTicketLinks = async () => {
+    if (!form.ticket_links.length) return;
+    try {
+      const { updatePerformance } = await import("../../api/performances");
+      await updatePerformance(createdPerf.id ?? createdPerf._id, {
+        ticket_links: form.ticket_links,
+      });
+    } catch (_) { /* falha silenciosa */ }
+  };
+
+  const onSessionsDone = async () => {
+    await saveTicketLinks();
     setMsg({ ok: true, text: `Performance "${createdPerf.name}" criada com sessões!` });
     onSaved?.();
     resetForm();
   };
 
-  const skipSessions = () => {
+  const skipSessions = async () => {
+    await saveTicketLinks();
     setMsg({ ok: true, text: `Performance "${createdPerf.name}" criada. Sessões podem ser adicionadas depois.` });
     onSaved?.();
     resetForm();
@@ -160,7 +193,7 @@ export default function PerformanceForm({ onSaved, onCancel } = {}) {
               {/* Campos */}
               <div className="pf-fields">
 
-                {/* Nome | Classificação | Temporada */}
+                {/* Nome | Classificação | Temporada | Duração */}
                 <div className="pf-row pf-row-compact">
                   <div className="pf-field">
                     <label className="pf-label">Nome <span className="pf-req">*</span></label>
@@ -191,6 +224,18 @@ export default function PerformanceForm({ onSaved, onCancel } = {}) {
                       max="2100"
                       value={form.season}
                       onChange={(e) => set("season", e.target.value)}
+                    />
+                  </div>
+                  <div className="pf-field pf-field-xs">
+                    <label className="pf-label">Duração (min)</label>
+                    <input
+                      className="pf-input"
+                      type="number"
+                      min="1"
+                      max="999"
+                      placeholder="90"
+                      value={form.duration_minutes}
+                      onChange={(e) => set("duration_minutes", e.target.value)}
                     />
                   </div>
                 </div>
@@ -271,7 +316,7 @@ export default function PerformanceForm({ onSaved, onCancel } = {}) {
         </>
       )}
 
-      {/* ── Etapa 2: sessões ── */}
+      {/* ── Etapa 2: sessões + links ── */}
       {step === 2 && createdPerf && (
         <>
           <div className="pf-header">
@@ -290,6 +335,15 @@ export default function PerformanceForm({ onSaved, onCancel } = {}) {
             onDone={onSessionsDone}
             onSkip={skipSessions}
           />
+
+          {/* Links de ingressos — preenchidos após definir os teatros das sessões */}
+          <div style={{ marginTop: 32 }}>
+            <TicketLinksEditor
+              value={form.ticket_links}
+              onChange={(v) => set("ticket_links", v)}
+              theatersMap={theatersMap}
+            />
+          </div>
         </>
       )}
 

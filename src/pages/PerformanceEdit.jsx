@@ -9,9 +9,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getPerformance, updatePerformance } from "../api/performances";
+import { listTheaters } from "../api/theaters";
 import { uploadImage, imageUrl } from "../api/media";
 import CrewEditor from "../components/performances/CrewEditor";
 import TagSelector from "../components/performances/TagSelector";
+import TicketLinksEditor from "../components/performances/TicketLinksEditor";
 import "../components/performances/PerformanceForm.css";
 
 const CLASSIFICATIONS = ["Livre", "10", "12", "14", "16", "18"];
@@ -27,22 +29,32 @@ export default function PerformanceEditPage() {
   const [loading, setLoading]         = useState(true);
   const [saving, setSaving]           = useState(false);
   const [msg, setMsg]                 = useState(null);
+  const [theatersMap, setTheatersMap] = useState({});
+
+  useEffect(() => {
+    listTheaters().then((list) => {
+      const map = Object.fromEntries((list ?? []).map((t) => [String(t.id), t]));
+      setTheatersMap(map);
+    }).catch(() => {});
+  }, []);
 
   // ── carrega dados ─────────────────────────────────────────────────────────
   useEffect(() => {
     getPerformance(id)
       .then((p) => {
         setForm({
-          name:           p.name,
-          synopsis:       p.synopsis,
-          tags:           p.tags || [],
-          classification: p.classification,
-          season:         p.season,
-          dramaturgyCsv:  listToCSV(p.dramaturgy),
-          directionCsv:   listToCSV(p.direction),
-          castCsv:        listToCSV(p.cast),
-          crew:           p.crew || [],
-          banner_url:     p.banner_url ?? null,
+          name:             p.name,
+          synopsis:         p.synopsis,
+          tags:             p.tags || [],
+          classification:   p.classification,
+          season:           p.season,
+          duration_minutes: p.duration_minutes ?? "",
+          dramaturgyCsv:    listToCSV(p.dramaturgy),
+          directionCsv:     listToCSV(p.direction),
+          castCsv:          listToCSV(p.cast),
+          crew:             p.crew || [],
+          ticket_links:     p.ticket_links || [],
+          banner_url:       p.banner_url ?? null,
         });
         if (p.banner_url) setBannerPreview(imageUrl(p.banner_url));
       })
@@ -73,15 +85,17 @@ export default function PerformanceEditPage() {
       }
 
       await updatePerformance(id, {
-        name:           form.name,
-        synopsis:       form.synopsis,
-        tags:           form.tags,
-        classification: form.classification,
-        season:         parseInt(form.season, 10),
-        dramaturgy:     csvToList(form.dramaturgyCsv),
-        direction:      csvToList(form.directionCsv),
-        cast:           csvToList(form.castCsv),
-        crew:           form.crew,
+        name:             form.name,
+        synopsis:         form.synopsis,
+        tags:             form.tags,
+        classification:   form.classification,
+        season:           parseInt(form.season, 10),
+        duration_minutes: form.duration_minutes ? parseInt(form.duration_minutes, 10) : null,
+        dramaturgy:       csvToList(form.dramaturgyCsv),
+        direction:        csvToList(form.directionCsv),
+        cast:             csvToList(form.castCsv),
+        crew:             form.crew,
+        ticket_links:     form.ticket_links,
         banner_url,
       });
 
@@ -157,7 +171,7 @@ export default function PerformanceEditPage() {
           {/* Campos */}
           <div className="pf-fields">
 
-            {/* Nome | Classificação | Temporada */}
+            {/* Nome | Classificação | Temporada | Duração */}
             <div className="pf-row pf-row-compact">
               <div className="pf-field">
                 <label className="pf-label">Nome <span className="pf-req">*</span></label>
@@ -187,6 +201,18 @@ export default function PerformanceEditPage() {
                   max="2100"
                   value={form.season}
                   onChange={(e) => set("season", e.target.value)}
+                />
+              </div>
+              <div className="pf-field pf-field-xs">
+                <label className="pf-label">Duração (min)</label>
+                <input
+                  className="pf-input"
+                  type="number"
+                  min="1"
+                  max="999"
+                  placeholder="90"
+                  value={form.duration_minutes}
+                  onChange={(e) => set("duration_minutes", e.target.value)}
                 />
               </div>
             </div>
@@ -242,6 +268,13 @@ export default function PerformanceEditPage() {
                 onChange={(e) => set("castCsv", e.target.value)}
               />
             </div>
+
+            {/* Links de ingressos por teatro */}
+            <TicketLinksEditor
+              value={form.ticket_links}
+              onChange={(v) => set("ticket_links", v)}
+              theatersMap={theatersMap}
+            />
 
             {/* Produção técnica */}
             <CrewEditor value={form.crew} onChange={(v) => set("crew", v)} />

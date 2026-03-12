@@ -1,0 +1,170 @@
+/* ═══════════════════════════════════════════
+   TicketLinksEditor.css
+   Prefixo "tl-" para escopo isolado.
+═══════════════════════════════════════════ */
+
+.tl-root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Lista de teatros ── */
+.tl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tl-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid #25303a;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ── Header do item ── */
+.tl-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tl-theater-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e8eef3;
+}
+
+.tl-remove {
+  background: none;
+  border: none;
+  color: #9fb0bf;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s, color 0.15s;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  font-weight: 400;
+}
+
+.tl-remove:hover {
+  opacity: 1;
+  color: #ff5c7a;
+  background: none;
+  transform: none;
+}
+
+/* ── Toggle ── */
+.tl-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tl-toggle-input {
+  display: none;
+}
+
+.tl-toggle-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 20px;
+  background: #25303a;
+  border: 1px solid #35454f;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.tl-toggle-input:checked + .tl-toggle-track {
+  background: rgba(198, 40, 40, 0.5);
+  border-color: rgba(198, 40, 40, 0.7);
+}
+
+.tl-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #9fb0bf;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.tl-toggle-input:checked + .tl-toggle-track .tl-toggle-thumb {
+  transform: translateX(16px);
+  background: #e57373;
+}
+
+.tl-toggle-text {
+  font-size: 12px;
+  color: #9fb0bf;
+}
+
+.tl-toggle-input:checked ~ .tl-toggle-text {
+  color: #e57373;
+}
+
+/* ── URL input ── */
+.tl-url-input {
+  font-size: 13px;
+}
+
+/* ── Adicionar teatro ── */
+.tl-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tl-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.tl-add-btn {
+  white-space: nowrap;
+  padding: 0 16px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid rgba(198, 40, 40, 0.5);
+  background: rgba(198, 40, 40, 0.12);
+  color: #e57373;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+  /* reset */
+  width: auto;
+  font-weight: 500;
+}
+
+.tl-add-btn:hover:not(:disabled) {
+  background: rgba(198, 40, 40, 0.25);
+  transform: none;
+}
+
+.tl-add-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tl-empty {
+  font-size: 13px;
+  color: #9fb0bf;
+  opacity: 0.6;
+  margin: 0;
+}
